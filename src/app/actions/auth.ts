@@ -37,7 +37,7 @@ export async function signInAction(payload: {
       }
 
       profile = await DataProvider.createProfile({
-        id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: crypto.randomUUID(),
         email,
         full_name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
         role: resolvedRole,
@@ -91,7 +91,7 @@ export async function signUpAction(payload: {
     }
 
     const profile = await DataProvider.createProfile({
-      id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: crypto.randomUUID(),
       email,
       full_name: payload.fullName.trim(),
       phone: payload.phone || null,

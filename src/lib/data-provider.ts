@@ -89,7 +89,7 @@ const INITIAL_PROFILES: ProfileRow[] = [
 
 const INITIAL_INITIATIVES: InitiativeRow[] = [
   {
-    id: "i0000000-0000-0000-0000-000000000001",
+    id: "a0000000-0000-0000-0000-000000000001",
     slug: "clean-communities-initiative",
     title: "Clean Communities Initiative",
     summary: "Community waste cleanup & drainage desilting across South Tongu.",
@@ -104,7 +104,7 @@ const INITIAL_INITIATIVES: InitiativeRow[] = [
     updated_at: new Date().toISOString(),
   },
   {
-    id: "i0000000-0000-0000-0000-000000000002",
+    id: "a0000000-0000-0000-0000-000000000002",
     slug: "global-citizenship-programme",
     title: "Global Citizenship & Civic Education",
     summary: "Empowering young leaders through civic education and rights awareness.",
@@ -119,7 +119,7 @@ const INITIAL_INITIATIVES: InitiativeRow[] = [
     updated_at: new Date().toISOString(),
   },
   {
-    id: "i0000000-0000-0000-0000-000000000003",
+    id: "a0000000-0000-0000-0000-000000000003",
     slug: "youth-skills-livelihood-initiative",
     title: "Youth Skills & Livelihoods Hub",
     summary: "Vocational training and modern digital skills for youth.",
@@ -137,7 +137,7 @@ const INITIAL_INITIATIVES: InitiativeRow[] = [
 
 const INITIAL_REPORTS: ReportRow[] = [
   {
-    id: "r0000000-0000-0000-0000-000000000001",
+    id: "c0000000-0000-0000-0000-000000000001",
     user_id: "d0000000-0000-0000-0000-000000000003",
     title: "Dabala Market Drainage Overflow",
     description: "During heavy rain, the concrete storm drain behind the fish market stalls fills up with debris and floods the access road.",
@@ -156,7 +156,7 @@ const INITIAL_REPORTS: ReportRow[] = [
     updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
   {
-    id: "r0000000-0000-0000-0000-000000000002",
+    id: "c0000000-0000-0000-0000-000000000002",
     user_id: "d0000000-0000-0000-0000-000000000003",
     title: "Sogakope Junction Broken Solar Streetlights",
     description: "Three consecutive solar street poles near the roundabout are dark at night, creating a hazardous crosswalk for pedestrians.",
@@ -175,7 +175,7 @@ const INITIAL_REPORTS: ReportRow[] = [
     updated_at: new Date(Date.now() - 3 * 86400000).toISOString(),
   },
   {
-    id: "r0000000-0000-0000-0000-000000000003",
+    id: "c0000000-0000-0000-0000-000000000003",
     user_id: "d0000000-0000-0000-0000-000000000003",
     title: "Agorkpo CHPS Compound Borehole Pump Failure",
     description: "The mechanical handpump serving the maternal health clinic broke down, forcing staff to haul water from an untreated open source.",
@@ -194,7 +194,7 @@ const INITIAL_REPORTS: ReportRow[] = [
     updated_at: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
   {
-    id: "r0000000-0000-0000-0000-000000000004",
+    id: "c0000000-0000-0000-0000-000000000004",
     user_id: "d0000000-0000-0000-0000-000000000002",
     title: "Tefle Primary School Classroom Roofing Repairs",
     description: "Strong rain ripped off corrugated iron sheets on the JHS Block B roof, leaving two classrooms exposed to rain.",
@@ -213,7 +213,7 @@ const INITIAL_REPORTS: ReportRow[] = [
     updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
   {
-    id: "r0000000-0000-0000-0000-000000000005",
+    id: "c0000000-0000-0000-0000-000000000005",
     user_id: "d0000000-0000-0000-0000-000000000003",
     title: "Sokpoe Public Water Standpipe Taphead Replacement",
     description: "Leaking brass taphead replaced with heavy-duty anti-vandalism faucet, eliminating water loss.",
@@ -235,7 +235,7 @@ const INITIAL_REPORTS: ReportRow[] = [
 
 const INITIAL_VOLUNTEER_HOURS: VolunteerHourRow[] = [
   {
-    id: "v0000000-0000-0000-0000-000000000001",
+    id: "e0000000-0000-0000-0000-000000000001",
     volunteer_id: "d0000000-0000-0000-0000-000000000002",
     activity: "Sogakope Community Clean-Up & Drain Desilting",
     category: "Clean Communities",
@@ -249,7 +249,7 @@ const INITIAL_VOLUNTEER_HOURS: VolunteerHourRow[] = [
     created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
   },
   {
-    id: "v0000000-0000-0000-0000-000000000002",
+    id: "e0000000-0000-0000-0000-000000000002",
     volunteer_id: "d0000000-0000-0000-0000-000000000002",
     activity: "Civic Literacy Outreach at Dabala Basic School",
     category: "Civic Education",
@@ -263,7 +263,7 @@ const INITIAL_VOLUNTEER_HOURS: VolunteerHourRow[] = [
     created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
   },
   {
-    id: "v0000000-0000-0000-0000-000000000003",
+    id: "e0000000-0000-0000-0000-000000000003",
     volunteer_id: "d0000000-0000-0000-0000-000000000002",
     activity: "Health Outreach Data Collection in Agorkpo",
     category: "Health Outreach",
@@ -277,7 +277,7 @@ const INITIAL_VOLUNTEER_HOURS: VolunteerHourRow[] = [
     created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
   },
   {
-    id: "v0000000-0000-0000-0000-000000000004",
+    id: "e0000000-0000-0000-0000-000000000004",
     volunteer_id: "d0000000-0000-0000-0000-000000000002",
     activity: "Youth Skills Registration Desk at Tefle Community Centre",
     category: "Youth Skills",
@@ -294,13 +294,13 @@ const INITIAL_VOLUNTEER_HOURS: VolunteerHourRow[] = [
 
 const INITIAL_DONATIONS: DonationRow[] = [
   {
-    id: "m0000000-0000-0000-0000-000000000001",
+    id: "b0000000-0000-0000-0000-000000000001",
     user_id: "d0000000-0000-0000-0000-000000000003",
     amount: 250.0,
     currency: "GHS",
     frequency: "ONE_TIME",
     status: "SUCCESS",
-    initiative_id: "i0000000-0000-0000-0000-000000000001",
+    initiative_id: "a0000000-0000-0000-0000-000000000001",
     donor_name: "Kofi Mensah",
     donor_email: "kofi@citizen.gh",
     payment_method: "Mobile Money (MTN)",
@@ -309,13 +309,13 @@ const INITIAL_DONATIONS: DonationRow[] = [
     created_at: new Date(Date.now() - 18 * 86400000).toISOString(),
   },
   {
-    id: "m0000000-0000-0000-0000-000000000002",
+    id: "b0000000-0000-0000-0000-000000000002",
     user_id: "d0000000-0000-0000-0000-000000000003",
     amount: 100.0,
     currency: "GHS",
     frequency: "MONTHLY",
     status: "SUCCESS",
-    initiative_id: "i0000000-0000-0000-0000-000000000002",
+    initiative_id: "a0000000-0000-0000-0000-000000000002",
     donor_name: "Kofi Mensah",
     donor_email: "kofi@citizen.gh",
     payment_method: "Mobile Money (Telecel)",
@@ -324,13 +324,13 @@ const INITIAL_DONATIONS: DonationRow[] = [
     created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
   },
   {
-    id: "m0000000-0000-0000-0000-000000000003",
+    id: "b0000000-0000-0000-0000-000000000003",
     user_id: null,
     amount: 500.0,
     currency: "GHS",
     frequency: "ONE_TIME",
     status: "SUCCESS",
-    initiative_id: "i0000000-0000-0000-0000-000000000001",
+    initiative_id: "a0000000-0000-0000-0000-000000000001",
     donor_name: "Anonymous Supporter",
     donor_email: "supporter@southtongu.org",
     payment_method: "Card (Visa)",
@@ -342,14 +342,14 @@ const INITIAL_DONATIONS: DonationRow[] = [
 
 const INITIAL_VOTES: PriorityVoteRow[] = [
   {
-    id: "p0000000-0000-0000-0000-000000000001",
+    id: "f0000000-0000-0000-0000-000000000001",
     user_id: "d0000000-0000-0000-0000-000000000003",
     project_name: "Agorkpo CHPS Compound Maternity Wing Expansion",
     category: "Healthcare",
     vote_date: new Date(Date.now() - 5 * 86400000).toISOString(),
   },
   {
-    id: "p0000000-0000-0000-0000-000000000002",
+    id: "f0000000-0000-0000-0000-000000000002",
     user_id: "d0000000-0000-0000-0000-000000000002",
     project_name: "Sogakope Waterfront Storm Drain Desilting & Culvert Upgrade",
     category: "Sanitation",

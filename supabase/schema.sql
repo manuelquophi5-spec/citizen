@@ -48,7 +48,7 @@ END $$;
 -- 2. TABLE: profiles
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL UNIQUE,
   full_name TEXT NOT NULL DEFAULT '',
   phone TEXT DEFAULT NULL,
@@ -198,19 +198,32 @@ BEGIN
   NEW.updated_at = timezone('utc'::text, now());
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+SET search_path = public, pg_temp;
 
-CREATE TRIGGER set_profiles_updated_at
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_profiles_updated_at') THEN
+    CREATE TRIGGER set_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+  END IF;
+END $$;
 
-CREATE TRIGGER set_reports_updated_at
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_reports_updated_at') THEN
+    CREATE TRIGGER set_reports_updated_at
   BEFORE UPDATE ON public.reports
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+  END IF;
+END $$;
 
-CREATE TRIGGER set_initiatives_updated_at
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_initiatives_updated_at') THEN
+    CREATE TRIGGER set_initiatives_updated_at
   BEFORE UPDATE ON public.initiatives
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+  END IF;
+END $$;
 
 -- 8.3 Auto-create profile upon auth.users signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -255,9 +268,13 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created') THEN
+    CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END $$;
 
 -- 8.4 Auto-increment initiative raised_amount on successful donation
 CREATE OR REPLACE FUNCTION public.handle_successful_donation()
@@ -270,11 +287,22 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
 
-CREATE TRIGGER on_donation_status_update
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'on_donation_status_update') THEN
+    CREATE TRIGGER on_donation_status_update
   AFTER INSERT OR UPDATE ON public.donations
   FOR EACH ROW EXECUTE FUNCTION public.handle_successful_donation();
+  END IF;
+END $$;
+
+-- 8.5 Security Hardening on Function Execution
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_successful_donation() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
 
 -- ----------------------------------------------------------------------------
 -- 9. ROW LEVEL SECURITY (RLS) POLICIES
@@ -289,135 +317,253 @@ ALTER TABLE public.volunteer_hours ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.priority_votes ENABLE ROW LEVEL SECURITY;
 
 -- 9.1 Profiles Policies
-CREATE POLICY "Public profiles can be viewed by all authenticated users"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'Public profiles can be viewed by all authenticated users') THEN
+    CREATE POLICY "Public profiles can be viewed by all authenticated users"
   ON public.profiles FOR SELECT
   TO authenticated
   USING (true);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own profile"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'Users can update their own profile') THEN
+    CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE
   TO authenticated
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id AND role = (SELECT role FROM public.profiles WHERE id = auth.uid()));
+  END IF;
+END $$;
 
-CREATE POLICY "Admins have full access to profiles"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'Admins have full access to profiles') THEN
+    CREATE POLICY "Admins have full access to profiles"
   ON public.profiles FOR ALL
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
 
 -- 9.2 Initiatives Policies
-CREATE POLICY "Initiatives are readable by everyone"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'initiatives' AND policyname = 'Initiatives are readable by everyone') THEN
+    CREATE POLICY "Initiatives are readable by everyone"
   ON public.initiatives FOR SELECT
   TO anon, authenticated
   USING (true);
+  END IF;
+END $$;
 
-CREATE POLICY "Admins can manage initiatives"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'initiatives' AND policyname = 'Admins can manage initiatives') THEN
+    CREATE POLICY "Admins can manage initiatives"
   ON public.initiatives FOR ALL
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
 
 -- 9.3 Reports Policies
-CREATE POLICY "Anyone can view community reports"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' AND policyname = 'Anyone can view community reports') THEN
+    CREATE POLICY "Anyone can view community reports"
   ON public.reports FOR SELECT
   TO anon, authenticated
   USING (true);
+  END IF;
+END $$;
 
-CREATE POLICY "Authenticated users can create reports"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' AND policyname = 'Authenticated users can create reports') THEN
+    CREATE POLICY "Authenticated users can create reports"
   ON public.reports FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+  END IF;
+END $$;
 
-CREATE POLICY "Anonymous users can create reports"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' AND policyname = 'Anonymous users can create reports') THEN
+    CREATE POLICY "Anonymous users can create reports"
   ON public.reports FOR INSERT
   TO anon
   WITH CHECK (user_id IS NULL);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own reports while SUBMITTED"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' AND policyname = 'Users can update their own reports while SUBMITTED') THEN
+    CREATE POLICY "Users can update their own reports while SUBMITTED"
   ON public.reports FOR UPDATE
   TO authenticated
   USING (auth.uid() = user_id AND status = 'SUBMITTED')
   WITH CHECK (auth.uid() = user_id AND status = 'SUBMITTED');
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own reports while SUBMITTED"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' AND policyname = 'Users can delete their own reports while SUBMITTED') THEN
+    CREATE POLICY "Users can delete their own reports while SUBMITTED"
   ON public.reports FOR DELETE
   TO authenticated
   USING (auth.uid() = user_id AND status = 'SUBMITTED');
+  END IF;
+END $$;
 
-CREATE POLICY "Admins have full management on reports"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' AND policyname = 'Admins have full management on reports') THEN
+    CREATE POLICY "Admins have full management on reports"
   ON public.reports FOR ALL
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
 
 -- 9.4 Donations Policies
-CREATE POLICY "Donors can view their own donations"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'donations' AND policyname = 'Donors can view their own donations') THEN
+    CREATE POLICY "Donors can view their own donations"
   ON public.donations FOR SELECT
   TO authenticated
   USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Admins can view all donations"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'donations' AND policyname = 'Admins can view all donations') THEN
+    CREATE POLICY "Admins can view all donations"
   ON public.donations FOR SELECT
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
 
-CREATE POLICY "Anyone can record a donation"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'donations' AND policyname = 'Anyone can record a donation') THEN
+    CREATE POLICY "Anyone can record a donation"
   ON public.donations FOR INSERT
   TO anon, authenticated
   WITH CHECK ((auth.uid() = user_id OR user_id IS NULL) AND status = 'PENDING');
+  END IF;
+END $$;
 
-CREATE POLICY "Admins can update donation records"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'donations' AND policyname = 'Admins can update donation records') THEN
+    CREATE POLICY "Admins can update donation records"
   ON public.donations FOR UPDATE
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'donations' AND policyname = 'Public can view successful donations') THEN
+    CREATE POLICY "Public can view successful donations"
+  ON public.donations FOR SELECT
+  TO anon, authenticated
+  USING (status = 'SUCCESS');
+  END IF;
+END $$;
 
 -- 9.5 Volunteer Hours Policies
-CREATE POLICY "Volunteers can view their own hours"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'volunteer_hours' AND policyname = 'Volunteers can view their own hours') THEN
+    CREATE POLICY "Volunteers can view their own hours"
   ON public.volunteer_hours FOR SELECT
   TO authenticated
   USING (auth.uid() = volunteer_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Admins can view all volunteer hours"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'volunteer_hours' AND policyname = 'Admins can view all volunteer hours') THEN
+    CREATE POLICY "Admins can view all volunteer hours"
   ON public.volunteer_hours FOR SELECT
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
 
-CREATE POLICY "Volunteers can log hours"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'volunteer_hours' AND policyname = 'Volunteers can log hours') THEN
+    CREATE POLICY "Volunteers can log hours"
   ON public.volunteer_hours FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = volunteer_id AND status = 'PENDING');
+  END IF;
+END $$;
 
-CREATE POLICY "Volunteers can modify or void their pending hours"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'volunteer_hours' AND policyname = 'Volunteers can modify or void their pending hours') THEN
+    CREATE POLICY "Volunteers can modify or void their pending hours"
   ON public.volunteer_hours FOR UPDATE
   TO authenticated
   USING (auth.uid() = volunteer_id AND status = 'PENDING')
   WITH CHECK (auth.uid() = volunteer_id AND status IN ('PENDING', 'VOIDED'));
+  END IF;
+END $$;
 
-CREATE POLICY "Volunteers can delete pending hours"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'volunteer_hours' AND policyname = 'Volunteers can delete pending hours') THEN
+    CREATE POLICY "Volunteers can delete pending hours"
   ON public.volunteer_hours FOR DELETE
   TO authenticated
   USING (auth.uid() = volunteer_id AND status = 'PENDING');
+  END IF;
+END $$;
 
-CREATE POLICY "Admins can verify, reject or modify all volunteer hours"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'volunteer_hours' AND policyname = 'Admins can verify, reject or modify all volunteer hours') THEN
+    CREATE POLICY "Admins can verify, reject or modify all volunteer hours"
   ON public.volunteer_hours FOR ALL
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
 
 -- 9.6 Priority Votes Policies
-CREATE POLICY "Users can view their own votes"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'priority_votes' AND policyname = 'Anyone can view votes for tallies') THEN
+    CREATE POLICY "Anyone can view votes for tallies"
+  ON public.priority_votes FOR SELECT
+  TO anon, authenticated
+  USING (true);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'priority_votes' AND policyname = 'Users can view their own votes') THEN
+    CREATE POLICY "Users can view their own votes"
   ON public.priority_votes FOR SELECT
   TO authenticated
   USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Admins can view all votes"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'priority_votes' AND policyname = 'Admins can view all votes') THEN
+    CREATE POLICY "Admins can view all votes"
   ON public.priority_votes FOR SELECT
   TO authenticated
   USING (public.is_admin());
+  END IF;
+END $$;
 
-CREATE POLICY "Users can cast votes"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'priority_votes' AND policyname = 'Users can cast votes') THEN
+    CREATE POLICY "Users can cast votes"
   ON public.priority_votes FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can remove their vote"
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'priority_votes' AND policyname = 'Users can remove their vote') THEN
+    CREATE POLICY "Users can remove their vote"
   ON public.priority_votes FOR DELETE
   TO authenticated
   USING (auth.uid() = user_id);
+  END IF;
+END $$;

@@ -244,7 +244,7 @@ async function main() {
   // SECTION 3: Donation Records and Initiative Raised Amount Increments
   // ==========================================================================
   await runSection("Section 3: Donation Processing & Initiative Fund Auto-Increment", async () => {
-    const initId = "i0000000-0000-0000-0000-000000000001"; // Clean Communities Initiative (seed: 32800)
+    const initId = "a0000000-0000-0000-0000-000000000001"; // Clean Communities Initiative (seed: 32800)
     const initBefore = await DataProvider.getInitiativeById(initId);
     assert(initBefore !== null, "Target initiative exists in seed");
     const startingRaised = initBefore!.raised_amount;

@@ -67,7 +67,7 @@ SET email = EXCLUDED.email,
 INSERT INTO public.initiatives (id, slug, title, summary, description, category, target_amount, raised_amount, status, cover_image, location, created_at, updated_at)
 VALUES
   (
-    'i0000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000001',
     'clean-communities-initiative',
     'Clean Communities Initiative',
     'Community waste cleanup & drainage desilting across South Tongu.',
@@ -82,7 +82,7 @@ VALUES
     timezone('utc'::text, now())
   ),
   (
-    'i0000000-0000-0000-0000-000000000002',
+    'a0000000-0000-0000-0000-000000000002',
     'global-citizenship-programme',
     'Global Citizenship & Civic Education',
     'Empowering young leaders through civic education and rights awareness.',
@@ -97,7 +97,7 @@ VALUES
     timezone('utc'::text, now())
   ),
   (
-    'i0000000-0000-0000-0000-000000000003',
+    'a0000000-0000-0000-0000-000000000003',
     'youth-skills-livelihood-initiative',
     'Youth Skills & Livelihoods Hub',
     'Vocational training and modern digital skills for youth.',
@@ -124,7 +124,7 @@ SET title = EXCLUDED.title,
 INSERT INTO public.reports (id, user_id, title, description, category, location, priority, status, image_url, reporter_name, reporter_phone, reporter_email, admin_notes, official_feedback, assigned_department, created_at, updated_at)
 VALUES
   (
-    'r0000000-0000-0000-0000-000000000001',
+    'c0000000-0000-0000-0000-000000000001',
     'd0000000-0000-0000-0000-000000000003',
     'Dabala Market Drainage Overflow',
     'During heavy rain, the concrete storm drain behind the fish market stalls fills up with debris and floods the access road.',
@@ -144,7 +144,7 @@ VALUES
   ),
   -- Stage 1 / 2: IN_REVIEW
   (
-    'r0000000-0000-0000-0000-000000000002',
+    'c0000000-0000-0000-0000-000000000002',
     'd0000000-0000-0000-0000-000000000003',
     'Sogakope Junction Broken Solar Streetlights',
     'Three consecutive solar street poles near the roundabout are dark at night, creating a hazardous crosswalk for pedestrians.',
@@ -164,7 +164,7 @@ VALUES
   ),
   -- Stage 2 / 3: DISPATCHED
   (
-    'r0000000-0000-0000-0000-000000000003',
+    'c0000000-0000-0000-0000-000000000003',
     'd0000000-0000-0000-0000-000000000003',
     'Agorkpo CHPS Compound Borehole Pump Failure',
     'The mechanical handpump serving the maternal health clinic broke down, forcing staff to haul water from an untreated open source.',
@@ -184,7 +184,7 @@ VALUES
   ),
   -- Stage 3 / 4: IN_PROGRESS
   (
-    'r0000000-0000-0000-0000-000000000004',
+    'c0000000-0000-0000-0000-000000000004',
     'd0000000-0000-0000-0000-000000000002',
     'Tefle Primary School Classroom Roofing Repairs',
     'Strong rain ripped off corrugated iron sheets on the JHS Block B roof, leaving two classrooms exposed to rain.',
@@ -204,7 +204,7 @@ VALUES
   ),
   -- Stage 4 / 5: RESOLVED
   (
-    'r0000000-0000-0000-0000-000000000005',
+    'c0000000-0000-0000-0000-000000000005',
     'd0000000-0000-0000-0000-000000000003',
     'Sokpoe Public Water Standpipe Taphead Replacement',
     'Leaking brass taphead replaced with heavy-duty anti-vandalism faucet, eliminating water loss.',
@@ -230,7 +230,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.volunteer_hours (id, volunteer_id, activity, category, hours, date, supervisor, status, field_notes, verified_by, verified_at, created_at)
 VALUES
   (
-    'v0000000-0000-0000-0000-000000000001',
+    'e0000000-0000-0000-0000-000000000001',
     'd0000000-0000-0000-0000-000000000002',
     'Sogakope Community Clean-Up & Drain Desilting',
     'Clean Communities',
@@ -244,7 +244,7 @@ VALUES
     timezone('utc'::text, now() - INTERVAL '14 days')
   ),
   (
-    'v0000000-0000-0000-0000-000000000002',
+    'e0000000-0000-0000-0000-000000000002',
     'd0000000-0000-0000-0000-000000000002',
     'Civic Literacy Outreach at Dabala Basic School',
     'Civic Education',
@@ -258,7 +258,7 @@ VALUES
     timezone('utc'::text, now() - INTERVAL '10 days')
   ),
   (
-    'v0000000-0000-0000-0000-000000000003',
+    'e0000000-0000-0000-0000-000000000003',
     'd0000000-0000-0000-0000-000000000002',
     'Health Outreach Data Collection in Agorkpo',
     'Health Outreach',
@@ -272,7 +272,7 @@ VALUES
     timezone('utc'::text, now() - INTERVAL '6 days')
   ),
   (
-    'v0000000-0000-0000-0000-000000000004',
+    'e0000000-0000-0000-0000-000000000004',
     'd0000000-0000-0000-0000-000000000002',
     'Youth Skills Registration Desk at Tefle Community Centre',
     'Youth Skills',
@@ -293,14 +293,14 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.priority_votes (id, user_id, project_name, category, vote_date)
 VALUES
   (
-    'p0000000-0000-0000-0000-000000000001',
+    'f0000000-0000-0000-0000-000000000001',
     'd0000000-0000-0000-0000-000000000003',
     'Agorkpo CHPS Compound Maternity Wing Expansion',
     'Healthcare',
     timezone('utc'::text, now() - INTERVAL '5 days')
   ),
   (
-    'p0000000-0000-0000-0000-000000000002',
+    'f0000000-0000-0000-0000-000000000002',
     'd0000000-0000-0000-0000-000000000002',
     'Sogakope Waterfront Storm Drain Desilting & Culvert Upgrade',
     'Sanitation',
@@ -314,13 +314,13 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.donations (id, user_id, amount, currency, frequency, status, initiative_id, donor_name, donor_email, payment_method, reference, anonymous, created_at)
 VALUES
   (
-    'm0000000-0000-0000-0000-000000000001',
+    'b0000000-0000-0000-0000-000000000001',
     'd0000000-0000-0000-0000-000000000003',
     250.00,
     'GHS',
     'ONE_TIME',
     'SUCCESS',
-    'i0000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000001',
     'Kofi Mensah',
     'kofi@citizen.gh',
     'Mobile Money (MTN)',
@@ -329,13 +329,13 @@ VALUES
     timezone('utc'::text, now() - INTERVAL '18 days')
   ),
   (
-    'm0000000-0000-0000-0000-000000000002',
+    'b0000000-0000-0000-0000-000000000002',
     'd0000000-0000-0000-0000-000000000003',
     100.00,
     'GHS',
     'MONTHLY',
     'SUCCESS',
-    'i0000000-0000-0000-0000-000000000002',
+    'a0000000-0000-0000-0000-000000000002',
     'Kofi Mensah',
     'kofi@citizen.gh',
     'Mobile Money (Telecel)',
@@ -344,13 +344,13 @@ VALUES
     timezone('utc'::text, now() - INTERVAL '5 days')
   ),
   (
-    'm0000000-0000-0000-0000-000000000003',
+    'b0000000-0000-0000-0000-000000000003',
     NULL,
     500.00,
     'GHS',
     'ONE_TIME',
     'SUCCESS',
-    'i0000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000001',
     'Anonymous Supporter',
     'supporter@southtongu.org',
     'Card (Visa)',
