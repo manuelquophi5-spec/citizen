@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -42,6 +42,13 @@ import {
 import type { LocalSession } from "@/lib/local-session";
 import { clearSession, setSession, getSession } from "@/lib/local-session";
 import { initiatives, events } from "@/lib/mock-data";
+import {
+  getVolunteerHoursAction,
+  logVolunteerHoursAction,
+  voidVolunteerHoursAction,
+  updateVolunteerHoursAction,
+} from "@/app/actions/volunteer";
+import { getInitiativesAction } from "@/app/actions/donations";
 import { formatDate, cn } from "@/lib/utils";
 import { FilamentStatsOverview, type FilamentStat } from "./filament/filament-stats";
 import { FilamentBadge } from "./filament/filament-badge";
@@ -206,17 +213,50 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Hydrate from localStorage
-  useEffect(() => {
-    try {
-      const rawHours = window.localStorage.getItem(STORAGE_HOURS_KEY);
-      if (rawHours) {
-        setEntries(JSON.parse(rawHours));
-      } else {
-        setEntries(INITIAL_HOURS);
-        window.localStorage.setItem(STORAGE_HOURS_KEY, JSON.stringify(INITIAL_HOURS));
-      }
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
 
+  const fetchLiveHours = useCallback(async () => {
+    try {
+      const res = await getVolunteerHoursAction(session.userId ? { volunteerId: session.userId } : undefined);
+      if (res.success && res.data) {
+        const mapped: VolunteerHourEntry[] = res.data.map((r) => ({
+          id: r.id,
+          volunteerName: session.name || "Akua Agbavitor",
+          description: r.activity,
+          initiativeTitle: r.category || "General Volunteering",
+          date: r.date,
+          hours: Number(r.hours),
+          approved: r.status === "VERIFIED",
+          supervisor: r.supervisor || undefined,
+          fieldNotes: r.field_notes || undefined,
+        }));
+        setEntries(mapped);
+        return;
+      }
+    } catch (err) {
+      console.warn("Could not fetch live volunteer hours:", err);
+    }
+  }, [session.userId, session.name]);
+
+  // Hydrate entries & settings
+  useEffect(() => {
+    if (isLive) {
+      fetchLiveHours();
+    } else {
+      try {
+        const rawHours = window.localStorage.getItem(STORAGE_HOURS_KEY);
+        if (rawHours) {
+          setEntries(JSON.parse(rawHours));
+        } else {
+          setEntries(INITIAL_HOURS);
+          window.localStorage.setItem(STORAGE_HOURS_KEY, JSON.stringify(INITIAL_HOURS));
+        }
+      } catch {
+        setEntries(INITIAL_HOURS);
+      }
+    }
+
+    try {
       const rawSignups = window.localStorage.getItem(STORAGE_SIGNUPS_KEY);
       if (rawSignups) {
         setRegisteredEventIds(JSON.parse(rawSignups));
@@ -236,22 +276,24 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
       if (rawEmergency !== null) {
         setEmergencyReady(JSON.parse(rawEmergency));
       }
-    } catch {
-      setEntries(INITIAL_HOURS);
-    }
+    } catch {}
 
     const handleSyncHours = () => {
-      try {
-        const raw = window.localStorage.getItem(STORAGE_HOURS_KEY);
-        if (raw) setEntries(JSON.parse(raw));
-      } catch {}
+      if (isLive) {
+        fetchLiveHours();
+      } else {
+        try {
+          const raw = window.localStorage.getItem(STORAGE_HOURS_KEY);
+          if (raw) setEntries(JSON.parse(raw));
+        } catch {}
+      }
     };
 
     window.addEventListener("tcp:volunteer-hours-changed", handleSyncHours);
     return () => {
       window.removeEventListener("tcp:volunteer-hours-changed", handleSyncHours);
     };
-  }, []);
+  }, [isLive, fetchLiveHours]);
 
   const saveEntries = (updated: VolunteerHourEntry[]) => {
     setEntries(updated);
@@ -363,18 +405,45 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
     setShowLogModal(true);
   };
 
-  const handleCreateEntry = (e: React.FormEvent) => {
+  const handleCreateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
+    const hoursNum = Number(formHours) || 1;
+    const desc = formDescription.trim();
+    const init = formInitiative;
+    const dateVal = formDate;
+    const sup = formSupervisor.trim() || "District Coordinator";
+    const notes = formNotes.trim() || undefined;
+
+    let createdId = `vh-${Date.now()}`;
+    if (isLive) {
+      try {
+        const res = await logVolunteerHoursAction({
+          volunteer_id: session.userId || "d0000000-0000-0000-0000-000000000002",
+          activity: desc,
+          category: init,
+          hours: hoursNum,
+          date: dateVal,
+          supervisor: sup,
+          field_notes: notes || null,
+        });
+        if (res.success && res.data) {
+          createdId = res.data.id;
+        }
+      } catch (err) {
+        console.warn("Failed to persist volunteer hours live:", err);
+      }
+    }
+
     const newEntry: VolunteerHourEntry = {
-      id: `vh-${Date.now()}`,
+      id: createdId,
       volunteerName: session.name || "Akua Agbavitor",
-      description: formDescription.trim(),
-      initiativeTitle: formInitiative,
-      date: formDate,
-      hours: Number(formHours) || 1,
+      description: desc,
+      initiativeTitle: init,
+      date: dateVal,
+      hours: hoursNum,
       approved: false,
-      supervisor: formSupervisor.trim() || undefined,
-      fieldNotes: formNotes.trim() || undefined,
+      supervisor: sup,
+      fieldNotes: notes,
     };
     const updated = [newEntry, ...entries];
     saveEntries(updated);
@@ -393,9 +462,25 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
     setShowEditModal(true);
   };
 
-  const handleUpdateEntry = (e: React.FormEvent) => {
+  const handleUpdateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEntry) return;
+
+    if (isLive) {
+      try {
+        await updateVolunteerHoursAction(selectedEntry.id, {
+          activity: formDescription.trim(),
+          category: formInitiative,
+          hours: Number(formHours) || 1,
+          date: formDate,
+          supervisor: formSupervisor.trim() || undefined,
+          field_notes: formNotes.trim() || null,
+          status: "PENDING",
+        });
+      } catch (err) {
+        console.warn("Failed to update volunteer hours live:", err);
+      }
+    }
 
     const updated = entries.map((item) => {
       if (item.id === selectedEntry.id) {
@@ -425,8 +510,17 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
     setShowDeleteModal(true);
   };
 
-  const handleDeleteEntry = () => {
+  const handleDeleteEntry = async () => {
     if (!selectedEntry) return;
+
+    if (isLive) {
+      try {
+        await voidVolunteerHoursAction(selectedEntry.id, "Voided by volunteer");
+      } catch (err) {
+        console.warn("Failed to void volunteer hours live:", err);
+      }
+    }
+
     const updated = entries.filter((item) => item.id !== selectedEntry.id);
     saveEntries(updated);
     setShowDeleteModal(false);

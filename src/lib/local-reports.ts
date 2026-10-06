@@ -10,8 +10,30 @@ export const REPORTS_CHANGED_EVENT = "tcp:reports-changed";
 
 export type LocalSurveyReport = SurveyReport & { source: "local" };
 
+export function purgeLegacyDemoCache(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem("tcp:local-reports");
+    window.localStorage.removeItem("tcp:local-donations");
+    window.localStorage.removeItem("tcp:volunteer-hours");
+  } catch {
+    // no-op
+  }
+}
+
 export function getLocalReports(): LocalSurveyReport[] {
   if (typeof window === "undefined") return [];
+  if (process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live") {
+    try {
+      if (!window.sessionStorage.getItem("tcp:cache-purged")) {
+        purgeLegacyDemoCache();
+        window.sessionStorage.setItem("tcp:cache-purged", "true");
+      }
+    } catch {
+      // no-op
+    }
+    return [];
+  }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];

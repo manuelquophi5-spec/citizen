@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   HelpCircle,
 } from "lucide-react";
-import { setSession, nameFromEmail, DEMO_ACCOUNTS } from "@/lib/local-session";
+import { signInAction } from "@/app/actions/auth";
+import { setSession } from "@/lib/local-session";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export default function AdminLoginPage() {
@@ -28,17 +29,7 @@ export default function AdminLoginPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleQuickLogin = () => {
-    setPending(true);
-    setError(null);
-    const demo = DEMO_ACCOUNTS.admin;
-    setSession({ name: demo.name, email: demo.email, role: "admin" });
-    setTimeout(() => {
-      router.push("/admin");
-    }, 400);
-  };
-
-  const handleFormLogin = (e: React.FormEvent) => {
+  const handleFormLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
       setError("Please enter your official Assembly or District Officer email.");
@@ -51,10 +42,33 @@ export default function AdminLoginPage() {
 
     setPending(true);
     setError(null);
-    setSession({ name: nameFromEmail(email), email: email.trim(), role: "admin" });
-    setTimeout(() => {
+
+    try {
+      const res = await signInAction({ email: email.trim(), role: "admin" });
+      if (!res.success || !res.data) {
+        setError(res.error || "Authentication failed. Please verify your credentials.");
+        setPending(false);
+        return;
+      }
+
+      if (res.data.role !== "admin") {
+        setError("Access restricted: This account does not have administrative privileges.");
+        setPending(false);
+        return;
+      }
+
+      setSession({
+        name: res.data.name,
+        email: res.data.email,
+        role: "admin",
+        userId: res.data.userId,
+      });
+
       router.push("/admin");
-    }, 400);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to authenticate.");
+      setPending(false);
+    }
   };
 
   return (
@@ -96,40 +110,6 @@ export default function AdminLoginPage() {
             <p className="mt-2 text-xs text-ocean-300 max-w-md mx-auto leading-relaxed">
               Administrative authentication terminal for District Coordinators, Assembly Officers, and Civic Triage Liaisons.
             </p>
-          </div>
-
-          {/* 1-Click Fast-Track Demo Authorization */}
-          <div className="mb-6 rounded-2xl border border-gold-400/30 bg-gold-400/10 p-4 shadow-lg backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-gold-300">
-                <KeyRound className="h-4 w-4" />
-                <span>Authorized Demo Access</span>
-              </div>
-              <span className="rounded bg-gold-400/20 px-2 py-0.5 font-mono text-[10px] font-bold text-gold-200">
-                Coordinator
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-ocean-200">
-              Evaluating the operations console, incident triage, volunteer hours, and audit trail?
-            </p>
-            <button
-              type="button"
-              onClick={handleQuickLogin}
-              disabled={pending}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-400 to-amber-500 px-4 py-2.5 text-xs font-bold text-ocean-950 shadow-md hover:from-gold-300 hover:to-amber-400 active:scale-[0.99] transition disabled:opacity-50"
-            >
-              <UserCheck className="h-4 w-4" />
-              <span>{pending ? "Verifying Authorization…" : "1-Click Sign in as Selorm Dzreke (Admin)"}</span>
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-ocean-800" />
-            <span className="font-mono text-[11px] uppercase tracking-wider text-ocean-400">
-              Or authenticate with staff credentials
-            </span>
-            <div className="h-px flex-1 bg-ocean-800" />
           </div>
 
           {/* Official Credentials Form */}

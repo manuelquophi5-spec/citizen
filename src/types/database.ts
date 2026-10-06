@@ -31,7 +31,7 @@ export interface ActionResult<T = unknown> {
 // ----------------------------------------------------------------------------
 // 1. Profiles Entity Types
 // ----------------------------------------------------------------------------
-export interface ProfileRow {
+export type ProfileRow = {
   id: string;
   email: string;
   full_name: string;
@@ -41,9 +41,9 @@ export interface ProfileRow {
   skills: string[] | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface ProfileInsert {
+export type ProfileInsert = {
   id: string;
   email: string;
   full_name?: string;
@@ -53,9 +53,9 @@ export interface ProfileInsert {
   skills?: string[] | null;
   created_at?: string;
   updated_at?: string;
-}
+};
 
-export interface ProfileUpdate {
+export type ProfileUpdate = {
   id?: string;
   email?: string;
   full_name?: string;
@@ -65,12 +65,12 @@ export interface ProfileUpdate {
   skills?: string[] | null;
   created_at?: string;
   updated_at?: string;
-}
+};
 
 // ----------------------------------------------------------------------------
 // 2. Initiatives Entity Types
 // ----------------------------------------------------------------------------
-export interface InitiativeRow {
+export type InitiativeRow = {
   id: string;
   slug: string;
   title: string;
@@ -84,9 +84,9 @@ export interface InitiativeRow {
   location: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface InitiativeInsert {
+export type InitiativeInsert = {
   id?: string;
   slug: string;
   title: string;
@@ -100,9 +100,9 @@ export interface InitiativeInsert {
   location?: string | null;
   created_at?: string;
   updated_at?: string;
-}
+};
 
-export interface InitiativeUpdate {
+export type InitiativeUpdate = {
   id?: string;
   slug?: string;
   title?: string;
@@ -116,21 +116,21 @@ export interface InitiativeUpdate {
   location?: string | null;
   created_at?: string;
   updated_at?: string;
-}
+};
 
 // ----------------------------------------------------------------------------
 // 3. Reports Entity Types (5-Stage Lifecycle)
 // ----------------------------------------------------------------------------
-export interface ReportLocation {
+export type ReportLocation = {
   community: string;
   town?: string;
   district?: string;
   gps?: string;
   landmark?: string;
   [key: string]: unknown;
-}
+};
 
-export interface ReportRow {
+export type ReportRow = {
   id: string;
   user_id: string | null;
   title: string;
@@ -148,9 +148,9 @@ export interface ReportRow {
   assigned_department: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface ReportInsert {
+export type ReportInsert = {
   id?: string;
   user_id?: string | null;
   title: string;
@@ -168,9 +168,9 @@ export interface ReportInsert {
   assigned_department?: string | null;
   created_at?: string;
   updated_at?: string;
-}
+};
 
-export interface ReportUpdate {
+export type ReportUpdate = {
   id?: string;
   user_id?: string | null;
   title?: string;
@@ -188,12 +188,12 @@ export interface ReportUpdate {
   assigned_department?: string | null;
   created_at?: string;
   updated_at?: string;
-}
+};
 
 // ----------------------------------------------------------------------------
 // 4. Donations Entity Types
 // ----------------------------------------------------------------------------
-export interface DonationRow {
+export type DonationRow = {
   id: string;
   user_id: string | null;
   amount: number;
@@ -207,9 +207,9 @@ export interface DonationRow {
   reference: string | null;
   anonymous: boolean;
   created_at: string;
-}
+};
 
-export interface DonationInsert {
+export type DonationInsert = {
   id?: string;
   user_id?: string | null;
   amount: number;
@@ -223,9 +223,9 @@ export interface DonationInsert {
   reference?: string | null;
   anonymous?: boolean;
   created_at?: string;
-}
+};
 
-export interface DonationUpdate {
+export type DonationUpdate = {
   id?: string;
   user_id?: string | null;
   amount?: number;
@@ -239,12 +239,12 @@ export interface DonationUpdate {
   reference?: string | null;
   anonymous?: boolean;
   created_at?: string;
-}
+};
 
 // ----------------------------------------------------------------------------
 // 5. Volunteer Hours Entity Types
 // ----------------------------------------------------------------------------
-export interface VolunteerHourRow {
+export type VolunteerHourRow = {
   id: string;
   volunteer_id: string;
   activity: string;
@@ -257,9 +257,9 @@ export interface VolunteerHourRow {
   verified_by: string | null;
   verified_at: string | null;
   created_at: string;
-}
+};
 
-export interface VolunteerHourInsert {
+export type VolunteerHourInsert = {
   id?: string;
   volunteer_id: string;
   activity: string;
@@ -272,9 +272,9 @@ export interface VolunteerHourInsert {
   verified_by?: string | null;
   verified_at?: string | null;
   created_at?: string;
-}
+};
 
-export interface VolunteerHourUpdate {
+export type VolunteerHourUpdate = {
   id?: string;
   volunteer_id?: string;
   activity?: string;
@@ -287,70 +287,76 @@ export interface VolunteerHourUpdate {
   verified_by?: string | null;
   verified_at?: string | null;
   created_at?: string;
-}
+};
 
 // ----------------------------------------------------------------------------
 // 6. Priority Votes Entity Types
 // ----------------------------------------------------------------------------
-export interface PriorityVoteRow {
+export type PriorityVoteRow = {
   id: string;
   user_id: string;
   project_name: string;
   category: string;
   vote_date: string;
-}
+};
 
-export interface PriorityVoteInsert {
+export type PriorityVoteInsert = {
   id?: string;
   user_id: string;
   project_name: string;
   category: string;
   vote_date?: string;
-}
+};
 
-export interface PriorityVoteUpdate {
+export type PriorityVoteUpdate = {
   id?: string;
   user_id?: string;
   project_name?: string;
   category?: string;
   vote_date?: string;
-}
+};
 
 // ----------------------------------------------------------------------------
 // Canonical Supabase Database Generic Interface
 // ----------------------------------------------------------------------------
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
         Row: ProfileRow;
         Insert: ProfileInsert;
         Update: ProfileUpdate;
+        Relationships: [];
       };
       initiatives: {
         Row: InitiativeRow;
         Insert: InitiativeInsert;
         Update: InitiativeUpdate;
+        Relationships: [];
       };
       reports: {
         Row: ReportRow;
         Insert: ReportInsert;
         Update: ReportUpdate;
+        Relationships: [];
       };
       donations: {
         Row: DonationRow;
         Insert: DonationInsert;
         Update: DonationUpdate;
+        Relationships: [];
       };
       volunteer_hours: {
         Row: VolunteerHourRow;
         Insert: VolunteerHourInsert;
         Update: VolunteerHourUpdate;
+        Relationships: [];
       };
       priority_votes: {
         Row: PriorityVoteRow;
         Insert: PriorityVoteInsert;
         Update: PriorityVoteUpdate;
+        Relationships: [];
       };
     };
     Views: {
@@ -371,4 +377,5 @@ export interface Database {
       initiative_status: InitiativeStatus;
     };
   };
-}
+};
+

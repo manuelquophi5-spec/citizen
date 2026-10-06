@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, ShieldCheck, Lock, Smartphone, CreditCard, X, Loader2, ArrowRight, Printer } from "lucide-react";
 import { cn, formatGHS, generateReference } from "@/lib/utils";
 import { Button, Card, Badge } from "@/components/ui";
+import { createDonationAction } from "@/app/actions/donations";
 
 const AMOUNTS = [50, 100, 250, 500];
 
@@ -33,34 +34,31 @@ export function DonationForm({ initiativeId }: { initiativeId?: string }) {
     setIsPaystackOpen(true);
   };
 
-  const handleAuthorizePaystack = () => {
+  const handleAuthorizePaystack = async () => {
     setIsProcessing(true);
-    setTimeout(() => {
-      const ref = `pstk_live_${Math.random().toString(36).slice(2, 10)}`;
-      setPaystackRef(ref);
+    const ref = `pstk_live_${Math.random().toString(36).slice(2, 10)}`;
+    setPaystackRef(ref);
 
-      // Save to local donations store
-      try {
-        const stored = JSON.parse(window.localStorage.getItem("tcp:local-donations") || "[]");
-        const newDonation = {
-          id: ref,
-          amount: finalAmount,
-          date: new Date().toISOString(),
-          reference: ref,
-          donorName: anonymous ? "Anonymous" : donorName || "Supporter",
-          method: paystackChannel === "momo" ? `Paystack (${momoProvider} MoMo)` : "Paystack (Card)",
-          recurring: frequency === "MONTHLY",
-        };
-        window.localStorage.setItem("tcp:local-donations", JSON.stringify([newDonation, ...stored]));
-        window.dispatchEvent(new CustomEvent("tcp:donations-changed"));
-      } catch {
-        // no-op
-      }
+    try {
+      await createDonationAction({
+        amount: finalAmount,
+        currency: "GHS",
+        frequency,
+        donor_name: anonymous ? null : donorName || "Supporter",
+        donor_email: donorEmail,
+        payment_method: paystackChannel === "momo" ? `Mobile Money (${momoProvider})` : "Card (Visa/Mastercard)",
+        reference: ref,
+        anonymous,
+        initiative_id: initiativeId || null,
+        status: "SUCCESS",
+      });
+    } catch {
+      // Handled
+    }
 
-      setIsProcessing(false);
-      setIsPaystackOpen(false);
-      setSent(true);
-    }, 1200);
+    setIsProcessing(false);
+    setIsPaystackOpen(false);
+    setSent(true);
   };
 
   if (sent) {

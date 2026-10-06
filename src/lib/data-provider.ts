@@ -18,10 +18,13 @@ import type {
   ReportUpdate,
   DonationRow,
   DonationInsert,
+  DonationUpdate,
   VolunteerHourRow,
   VolunteerHourInsert,
+  VolunteerHourUpdate,
   PriorityVoteRow,
   PriorityVoteInsert,
+  PriorityVoteUpdate,
   ReportStatus,
   VolunteerHourStatus,
   InitiativeStatus,
@@ -852,7 +855,7 @@ export const DataProvider = {
     if (isLiveSupabaseAvailable()) {
       try {
         const supabase = createAdminClient();
-        const payload: Record<string, unknown> = { status };
+        const payload: ReportUpdate = { status };
         if (adminNotes !== undefined) payload.admin_notes = adminNotes;
         if (officialFeedback !== undefined) payload.official_feedback = officialFeedback;
         if (assignedDepartment !== undefined) payload.assigned_department = assignedDepartment;
@@ -1007,7 +1010,7 @@ export const DataProvider = {
     if (isLiveSupabaseAvailable()) {
       try {
         const supabase = createAdminClient();
-        const payload: Record<string, unknown> = { status };
+        const payload: VolunteerHourUpdate = { status };
         if (verifiedBy) {
           payload.verified_by = verifiedBy;
           payload.verified_at = new Date().toISOString();

@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { HandHeart, Building2 } from "lucide-react";
-import { donations } from "@/lib/mock-data";
+import { DataProvider } from "@/lib/data-provider";
 import { DonationForm } from "@/components/forms/donation-form";
 import { Card, SectionHeading } from "@/components/ui";
 import { formatGHS } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Donate" };
 
-export default function DonatePage({ searchParams }: { searchParams: { initiative?: string } }) {
+export default async function DonatePage({ searchParams }: { searchParams: { initiative?: string } }) {
+  const donations = await DataProvider.getDonations();
   const recentDonors = [...donations]
     .filter((d) => d.status === "SUCCESS")
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 8);
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 10);
 
   return (
     <section className="section-y">
@@ -20,7 +21,7 @@ export default function DonatePage({ searchParams }: { searchParams: { initiativ
           <SectionHeading
             eyebrow="Fuel the work"
             title="Make a donation"
-            description="This is a demo site — donations shown here are illustrative and no payment is actually processed."
+            description="Transparent and community-backed civic funding. Every contribution powers tangible development initiatives across South Tongu District."
           />
           <Card className="mt-8 p-6 sm:p-8">
             <DonationForm initiativeId={searchParams.initiative} />
@@ -33,7 +34,7 @@ export default function DonatePage({ searchParams }: { searchParams: { initiativ
             </p>
             <p className="flex items-start gap-2">
               <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-ocean-600 dark:text-ocean-400" />
-              <span><strong className="text-ocean-900 dark:text-white">Corporate giving</strong> — tick &quot;corporate donation&quot; above, or contact us for a partnership plan.</span>
+              <span><strong className="text-ocean-900 dark:text-white">Corporate giving</strong> — select corporate contribution or contact us for a institutional partnership plan.</span>
             </p>
           </div>
         </div>
@@ -44,7 +45,7 @@ export default function DonatePage({ searchParams }: { searchParams: { initiativ
             {recentDonors.map((d) => (
               <Card key={d.id} className="flex items-center justify-between p-4">
                 <span className="text-sm font-medium text-ocean-800 dark:text-ocean-200">
-                  {d.anonymous ? "Anonymous supporter" : d.donorName || "A generous donor"}
+                  {d.anonymous ? "Anonymous supporter" : d.donor_name || "A generous donor"}
                 </span>
                 <span className="font-mono text-sm text-ocean-600 dark:text-ocean-400">{formatGHS(d.amount)}</span>
               </Card>

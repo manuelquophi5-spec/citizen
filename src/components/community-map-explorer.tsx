@@ -12,6 +12,8 @@ import { labelize } from "@/types";
 import { Badge, Card } from "@/components/ui";
 import type { MapPin } from "@/components/community-map";
 
+import type { ReportRow } from "@/types/database";
+
 const CommunityMap = nextDynamic(
   () => import("@/components/community-map").then((m) => m.CommunityMap),
   {
@@ -33,7 +35,13 @@ function urgencyTone(urgency: string): MapPin["tone"] {
   return "medium";
 }
 
-export function CommunityMapExplorer({ seededReports }: { seededReports: SurveyReport[] }) {
+export function CommunityMapExplorer({
+  seededReports = [],
+  liveReports,
+}: {
+  seededReports?: SurveyReport[];
+  liveReports?: ReportRow[];
+}) {
   const [localReports, setLocalReports] = useState<LocalSurveyReport[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -42,9 +50,50 @@ export function CommunityMapExplorer({ seededReports }: { seededReports: SurveyR
   }, []);
 
   const allReports: FullReport[] = useMemo(() => {
+    if (liveReports && liveReports.length > 0) {
+      const converted: FullReport[] = liveReports.map((r) => {
+        const loc = (typeof r.location === "object" && r.location !== null ? r.location : {}) as Record<string, any>;
+        const community = loc.community || "Sogakope";
+        const town = loc.town || "South Tongu";
+        let lat: number | null = null;
+        let lng: number | null = null;
+        if (loc.gps && typeof loc.gps === "string") {
+          const parts = loc.gps.split(",").map((s: string) => parseFloat(s.trim()));
+          if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            lat = parts[0];
+            lng = parts[1];
+          }
+        }
+        return {
+          id: r.id,
+          community,
+          town,
+          latitude: lat,
+          longitude: lng,
+          category: r.category,
+          title: r.title,
+          description: r.description,
+          suggestedSolution: r.admin_notes || r.official_feedback || null,
+          priority: (r.priority as any) || "MEDIUM",
+          urgency: r.priority === "HIGH" ? "HIGH" : r.priority === "LOW" ? "LOW" : "MEDIUM",
+          status: (r.status === "DISPATCHED" ? "IN_PROGRESS" : r.status) as any,
+          reporterName: r.reporter_name,
+          reporterPhone: r.reporter_phone,
+          reporterEmail: r.reporter_email,
+          phone: r.reporter_phone,
+          email: r.reporter_email,
+          occupation: null,
+          anonymous: !r.reporter_name,
+          createdAt: new Date(r.created_at),
+          source: "seed",
+        };
+      });
+      return [...localReports, ...converted].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    }
+
     const seeded: FullReport[] = seededReports.map((r) => ({ ...r, source: "seed" }));
     return [...localReports, ...seeded].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }, [seededReports, localReports]);
+  }, [seededReports, liveReports, localReports]);
 
   const { pins, unplaced } = useMemo(() => {
     const pins: MapPin[] = [];

@@ -6,16 +6,17 @@
 const STORAGE_KEY = "tcp:session";
 export const SESSION_CHANGED_EVENT = "tcp:session-changed";
 
-export type UserRole = "user" | "volunteer" | "admin";
+export type UserRole = "user" | "volunteer" | "admin" | "citizen";
 
 export type LocalSession = {
   name: string;
   email: string;
   role: UserRole;
   loggedInAt: string;
+  userId?: string;
 };
 
-export const DEMO_ACCOUNTS: Record<UserRole, { name: string; email: string; role: UserRole; label: string; desc: string }> = {
+export const DEMO_ACCOUNTS: Record<string, { name: string; email: string; role: UserRole; label: string; desc: string }> = {
   user: {
     name: "Kofi Mensah",
     email: "kofi@citizen.gh",
@@ -51,13 +52,14 @@ export function getSession(): LocalSession | null {
       email: session.email,
       role: session.role ?? "user",
       loggedInAt: session.loggedInAt ?? new Date().toISOString(),
+      userId: session.userId,
     };
   } catch {
     return null;
   }
 }
 
-export function setSession(session: Omit<LocalSession, "loggedInAt"> & { role?: UserRole }) {
+export function setSession(session: Omit<LocalSession, "loggedInAt"> & { role?: UserRole; userId?: string }) {
   if (typeof window === "undefined") return;
   try {
     const full: LocalSession = {
@@ -65,6 +67,7 @@ export function setSession(session: Omit<LocalSession, "loggedInAt"> & { role?: 
       email: session.email,
       role: session.role ?? "user",
       loggedInAt: new Date().toISOString(),
+      userId: session.userId,
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
     window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT, { detail: full }));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -53,11 +53,60 @@ import {
   REPORTS_CHANGED_EVENT,
   type LocalSurveyReport,
 } from "@/lib/local-reports";
+import {
+  getReportsAction,
+  createReportAction,
+  deleteReportAction,
+  updateReportStatusAction,
+} from "@/app/actions/reports";
+import { getDonationHistoryAction } from "@/app/actions/donations";
+import {
+  getPriorityVotesAction,
+  getPriorityVoteCountsAction,
+  castPriorityVoteAction,
+} from "@/app/actions/votes";
+import type { ReportRow } from "@/types/database";
 import { getFavoriteSlugs, toggleFavoriteSlug } from "@/lib/local-favorites";
 import { formatGHS, formatDate, percent } from "@/lib/utils";
 import { FilamentStatsOverview, type FilamentStat } from "./filament/filament-stats";
 import { FilamentBadge } from "./filament/filament-badge";
 import { ThemeToggle } from "../layout/theme-toggle";
+
+function convertReportRowToLocal(r: ReportRow): LocalSurveyReport {
+  const loc = (typeof r.location === "object" && r.location !== null ? r.location : {}) as Record<string, any>;
+  const community = loc.community || "Sogakope";
+  const town = loc.town || "South Tongu";
+  let lat: number | null = null;
+  let lng: number | null = null;
+  if (loc.gps && typeof loc.gps === "string") {
+    const parts = loc.gps.split(",").map((s: string) => parseFloat(s.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      lat = parts[0];
+      lng = parts[1];
+    }
+  }
+  return {
+    id: r.id,
+    title: r.title,
+    category: r.category,
+    urgency: r.priority === "HIGH" ? "HIGH" : r.priority === "LOW" ? "LOW" : "MEDIUM",
+    priority: (r.priority as any) || "MEDIUM",
+    community,
+    town,
+    description: r.description,
+    reporterName: r.reporter_name,
+    phone: r.reporter_phone,
+    email: r.reporter_email,
+    occupation: null,
+    latitude: lat ?? 5.998,
+    longitude: lng ?? 0.589,
+    suggestedSolution: r.admin_notes || r.official_feedback || null,
+    anonymous: !r.reporter_name,
+    status: (r.status === "DISPATCHED" ? "IN_PROGRESS" : r.status) as any,
+    createdAt: new Date(r.created_at),
+    source: "local",
+  };
+}
 
 export type CitizenTab = "overview" | "issues" | "donations" | "favorites" | "polls" | "profile";
 
@@ -212,21 +261,76 @@ export function UserDashboard({
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Load from local storage
-  useEffect(() => {
-    try {
-      // Reports
-      setReports(getLocalReports());
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
 
-      // Donations
-      const rawDonations = window.localStorage.getItem("tcp:local-donations");
-      if (rawDonations) {
-        setDonationsList([...JSON.parse(rawDonations), ...SEED_DONATIONS]);
-      } else {
-        setDonationsList(SEED_DONATIONS);
+  const fetchLiveUserData = useCallback(async () => {
+    try {
+      // 1. Live reports
+      const reportsRes = await getReportsAction(session.userId ? { userId: session.userId } : undefined);
+      if (reportsRes.success && reportsRes.data) {
+        setReports(reportsRes.data.map(convertReportRowToLocal));
       }
 
-      // Profile
+      // 2. Live donations
+      const donRes = await getDonationHistoryAction(session.userId ? { userId: session.userId } : undefined);
+      if (donRes.success && donRes.data) {
+        const mappedDonations: DonationRecord[] = donRes.data.map((d) => ({
+          id: d.id,
+          initiativeSlug: d.initiative_id || undefined,
+          amount: Number(d.amount),
+          date: d.created_at,
+          method: d.payment_method || undefined,
+          recurring: d.frequency !== "ONE_TIME",
+          ref: d.reference || undefined,
+          donorName: d.donor_name || undefined,
+          donorEmail: d.donor_email,
+        }));
+        setDonationsList(mappedDonations);
+      }
+
+      // 3. Live votes & tallies
+      const countsRes = await getPriorityVoteCountsAction();
+      if (countsRes.success && countsRes.data) {
+        const tallies: Record<string, number> = {};
+        POLL_OPTIONS.forEach((opt) => {
+          tallies[opt.id] = countsRes.data?.[opt.title] ?? opt.votes;
+        });
+        setPollVotes(tallies);
+      }
+
+      if (session.userId) {
+        const userVotesRes = await getPriorityVotesAction(session.userId);
+        if (userVotesRes.success && userVotesRes.data && userVotesRes.data.length > 0) {
+          const matchOpt = POLL_OPTIONS.find((o) => o.title === userVotesRes.data?.[0]?.project_name);
+          if (matchOpt) {
+            setUserVotedOption(matchOpt.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch live user dashboard data:", err);
+    }
+  }, [session.userId]);
+
+  // Load initial data
+  useEffect(() => {
+    if (isLive) {
+      fetchLiveUserData();
+    } else {
+      try {
+        setReports(getLocalReports());
+        const rawDonations = window.localStorage.getItem("tcp:local-donations");
+        if (rawDonations) {
+          setDonationsList([...JSON.parse(rawDonations), ...SEED_DONATIONS]);
+        } else {
+          setDonationsList(SEED_DONATIONS);
+        }
+        const rawVote = window.localStorage.getItem("tcp:user-poll-vote");
+        if (rawVote) setUserVotedOption(rawVote);
+      } catch {}
+    }
+
+    try {
       const rawProfile = window.localStorage.getItem("tcp:citizen-profile");
       if (rawProfile) {
         const p = JSON.parse(rawProfile);
@@ -237,24 +341,22 @@ export function UserDashboard({
         if (p.commChannel) setResidentCommChannel(p.commChannel);
       }
 
-      // Recurring Pledge
       const rawPledge = window.localStorage.getItem("tcp:user-recurring-pledge");
       if (rawPledge) setRecurringPledge(JSON.parse(rawPledge));
 
-      // Favorites & Targets
       const savedFavorites = getFavoriteSlugs();
       if (savedFavorites.length > 0) setFavoriteSlugs(savedFavorites);
 
       const rawTargets = window.localStorage.getItem("tcp:user-initiative-targets");
       if (rawTargets) setInitiativeTargets(JSON.parse(rawTargets));
-
-      // Poll vote
-      const rawVote = window.localStorage.getItem("tcp:user-poll-vote");
-      if (rawVote) setUserVotedOption(rawVote);
     } catch {}
 
     const handleSyncReports = () => {
-      setReports(getLocalReports());
+      if (isLive) {
+        fetchLiveUserData();
+      } else {
+        setReports(getLocalReports());
+      }
     };
 
     window.addEventListener(REPORTS_CHANGED_EVENT, handleSyncReports);
@@ -264,7 +366,7 @@ export function UserDashboard({
       window.removeEventListener(REPORTS_CHANGED_EVENT, handleSyncReports);
       window.removeEventListener("tcp:admin-issue-statuses-changed", handleSyncReports);
     };
-  }, []);
+  }, [isLive, fetchLiveUserData]);
 
   const totalDonated = donationsList.reduce((sum, d) => sum + d.amount, 0);
   const resolvedReportsCount = reports.filter((r) => r.status === "RESOLVED").length;
@@ -310,36 +412,60 @@ export function UserDashboard({
   ];
 
   // Report CRUD handlers
-  const handleCreateReport = (e: React.FormEvent) => {
+  // Report CRUD handlers
+  const handleCreateReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!repTitle.trim() || !repDesc.trim()) return;
 
-    const newRep = addLocalReport({
-      id: generateLocalReportId(),
-      title: repTitle.trim(),
-      category: repCategory,
-      urgency: repUrgency,
-      priority: repUrgency === "CRITICAL" ? "HIGH" : repUrgency === "HIGH" ? "HIGH" : "MEDIUM",
-      community: repCommunity,
-      town: repTown,
-      description: repDesc.trim(),
-      reporterName: residentName,
-      phone: repPhone || residentPhone,
-      occupation: null,
-      email: residentEmail,
-      latitude: 5.998,
-      longitude: 0.589,
-      suggestedSolution: null,
-      anonymous: false,
-      status: "SUBMITTED",
-      createdAt: new Date(),
-    });
+    if (isLive) {
+      try {
+        const res = await createReportAction({
+          title: repTitle.trim(),
+          category: repCategory,
+          description: repDesc.trim(),
+          user_id: session.userId || null,
+          priority: repUrgency === "CRITICAL" || repUrgency === "HIGH" ? "HIGH" : "MEDIUM",
+          status: "SUBMITTED",
+          reporter_name: residentName,
+          reporter_phone: repPhone || residentPhone,
+          reporter_email: residentEmail,
+          location: { community: repCommunity, town: repTown },
+        });
+        if (res.success && res.data) {
+          const converted = convertReportRowToLocal(res.data);
+          setReports((prev) => [converted, ...prev]);
+        }
+      } catch (err) {
+        console.warn("Failed to create report live:", err);
+      }
+    } else {
+      const newRep = addLocalReport({
+        id: generateLocalReportId(),
+        title: repTitle.trim(),
+        category: repCategory,
+        urgency: repUrgency,
+        priority: repUrgency === "CRITICAL" ? "HIGH" : repUrgency === "HIGH" ? "HIGH" : "MEDIUM",
+        community: repCommunity,
+        town: repTown,
+        description: repDesc.trim(),
+        reporterName: residentName,
+        phone: repPhone || residentPhone,
+        occupation: null,
+        email: residentEmail,
+        latitude: 5.998,
+        longitude: 0.589,
+        suggestedSolution: null,
+        anonymous: false,
+        status: "SUBMITTED",
+        createdAt: new Date(),
+      });
+      setReports(getLocalReports());
+    }
 
-    setReports(getLocalReports());
     setNewReportModalOpen(false);
     setRepTitle("");
     setRepDesc("");
-    showToast(`Filed civic report: "${newRep.title}"`);
+    showToast(`Filed civic report: "${repTitle.trim()}"`);
   };
 
   const handleOpenEditReport = (rep: LocalSurveyReport) => {
@@ -374,9 +500,17 @@ export function UserDashboard({
     showToast(`Updated civic report details for "${editRepTitle}"`);
   };
 
-  const handleWithdrawReport = (id: string) => {
-    deleteLocalReport(id);
-    setReports(getLocalReports());
+  const handleWithdrawReport = async (id: string) => {
+    if (isLive) {
+      try {
+        await deleteReportAction(id);
+      } catch (err) {
+        console.warn("Failed to delete report live:", err);
+      }
+    } else {
+      deleteLocalReport(id);
+    }
+    setReports((prev) => prev.filter((r) => r.id !== id));
     if (selectedReport && selectedReport.id === id) {
       setSelectedReport(null);
     }
@@ -449,7 +583,7 @@ export function UserDashboard({
   };
 
   // Poll Vote Handler
-  const handleCastVote = (optId: string) => {
+  const handleCastVote = async (optId: string) => {
     if (userVotedOption === optId) return;
     const nextVotes = { ...pollVotes, [optId]: (pollVotes[optId] || 0) + 1 };
     if (userVotedOption && pollVotes[userVotedOption]) {
@@ -460,6 +594,20 @@ export function UserDashboard({
     try {
       window.localStorage.setItem("tcp:user-poll-vote", optId);
     } catch {}
+
+    const selected = POLL_OPTIONS.find((o) => o.id === optId);
+    if (isLive && selected && session.userId) {
+      try {
+        await castPriorityVoteAction({
+          user_id: session.userId,
+          project_name: selected.title,
+          category: selected.category,
+        });
+      } catch (err) {
+        console.warn("Failed to cast priority vote live:", err);
+      }
+    }
+
     showToast("Your participatory budgeting vote has been recorded!");
   };
 

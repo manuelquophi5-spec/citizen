@@ -18,7 +18,8 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { setSession, nameFromEmail, DEMO_ACCOUNTS, type UserRole } from "@/lib/local-session";
+import { setSession } from "@/lib/local-session";
+import { signInAction } from "@/app/actions/auth";
 
 function LoginForm() {
   const router = useRouter();
@@ -41,35 +42,41 @@ function LoginForm() {
     }
   }, [roleParam]);
 
-  const handleQuickLogin = (role: "user" | "volunteer") => {
-    setPending(true);
-    setError(null);
-    const demo = DEMO_ACCOUNTS[role];
-    setSession({ name: demo.name, email: demo.email, role: demo.role });
-    const target = redirectParam || (role === "volunteer" ? "/volunteer" : "/user");
-    setTimeout(() => {
-      router.push(target);
-    }, 300);
-  };
-
-  const handleFormLogin = (e: React.FormEvent) => {
+  const handleFormLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
     }
-    if (!password) {
-      setError("Please enter your password.");
-      return;
-    }
 
     setPending(true);
     setError(null);
-    setSession({ name: nameFromEmail(email), email: email.trim(), role: activeRole });
-    const target = redirectParam || (activeRole === "volunteer" ? "/volunteer" : "/user");
-    setTimeout(() => {
+
+    try {
+      const res = await signInAction({
+        email: email.trim(),
+        role: activeRole === "volunteer" ? "volunteer" : "citizen",
+      });
+
+      if (!res.success || !res.data) {
+        setError(res.error || "Authentication failed. Please verify your email.");
+        setPending(false);
+        return;
+      }
+
+      setSession({
+        name: res.data.name,
+        email: res.data.email,
+        role: res.data.role,
+        userId: res.data.userId,
+      });
+
+      const target = redirectParam || (res.data.role === "volunteer" ? "/volunteer" : "/user");
       router.push(target);
-    }, 300);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Authentication error.");
+      setPending(false);
+    }
   };
 
   return (
@@ -138,47 +145,6 @@ function LoginForm() {
             </span>
           )}
         </div>
-      </div>
-
-      {/* 1-Click Fast-Track Demo Access */}
-      <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/30">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-emerald-900 dark:text-emerald-300">
-            {activeRole === "user" ? "Citizen Demo Account" : "Volunteer Demo Account"}
-          </span>
-          <span className="rounded bg-emerald-200/80 px-1.5 py-0.2 font-mono text-[10px] font-bold text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300">
-            1-Click
-          </span>
-        </div>
-        <p className="mt-1 text-xs text-emerald-800/80 dark:text-emerald-400/90">
-          {activeRole === "user"
-            ? "Evaluate the resident dashboard as Kofi Mensah (Citizen)."
-            : "Evaluate field shifts, service hours, and certificates as Akua Agbavitor (Volunteer)."}
-        </p>
-        <button
-          type="button"
-          onClick={() => handleQuickLogin(activeRole)}
-          disabled={pending}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 active:scale-[0.99] transition disabled:opacity-50"
-        >
-          <UserCheck className="h-4 w-4" />
-          <span>
-            {pending
-              ? "Authorizing…"
-              : activeRole === "user"
-              ? "1-Click Sign in as Kofi Mensah (Citizen)"
-              : "1-Click Sign in as Akua Agbavitor (Volunteer)"}
-          </span>
-        </button>
-      </div>
-
-      {/* Divider */}
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-ocean-200 dark:bg-ocean-800" />
-        <span className="font-mono text-[11px] uppercase tracking-wider text-ocean-400">
-          Or sign in with email
-        </span>
-        <div className="h-px flex-1 bg-ocean-200 dark:bg-ocean-800" />
       </div>
 
       {/* Login Credentials Form Card */}

@@ -92,3 +92,5 @@ export async function getInitiativesAction(): Promise<ActionResult<InitiativeRow
     return { success: false, error: message };
   }
 }
+
+export const createDonationAction = recordDonationAction;

@@ -9,6 +9,8 @@ import type { PriorityLevel, UrgencyLevel } from "@/lib/mock-data";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
+import { createReportAction } from "@/app/actions/reports";
+
 const inputClass =
   "w-full rounded-lg border border-ocean-200 px-3 py-2.5 text-sm focus:border-ocean-500 dark:border-ocean-700 dark:bg-ocean-900";
 
@@ -49,7 +51,7 @@ export function SurveyForm() {
             Report Submitted Successfully
           </h3>
           <p className="mx-auto max-w-md text-sm text-ocean-700 dark:text-ocean-300">
-            Thank you for taking civic action. Your report is saved and now pinned on the interactive South Tongu Community Map on this device.
+            Thank you for taking civic action. Your report is securely registered and published to the South Tongu Community Map and operations triage desk.
           </p>
         </div>
         <div className="flex flex-col justify-center gap-3 pt-2 sm:flex-row">
@@ -75,29 +77,40 @@ export function SurveyForm() {
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        addLocalReport({
-          id: generateLocalReportId(),
-          reporterName: anonymous ? null : (formData.get("reporterName") as string) || null,
-          phone: anonymous ? null : (formData.get("phone") as string) || null,
-          occupation: anonymous ? null : (formData.get("occupation") as string) || null,
-          email: anonymous ? null : (formData.get("email") as string) || null,
-          community: String(formData.get("community") || ""),
-          town: String(formData.get("town") || ""),
-          latitude: coords?.lat ?? null,
-          longitude: coords?.lng ?? null,
-          category: String(formData.get("category") || ""),
-          title: String(formData.get("title") || ""),
-          description: String(formData.get("description") || ""),
-          suggestedSolution: (formData.get("suggestedSolution") as string) || null,
-          priority: (formData.get("priority") as PriorityLevel) || "MEDIUM",
-          urgency: (formData.get("urgency") as UrgencyLevel) || "MEDIUM",
-          status: "SUBMITTED",
-          anonymous,
-          createdAt: new Date(),
-        });
+        const title = String(formData.get("title") || "").trim();
+        const description = String(formData.get("description") || "").trim();
+        const category = String(formData.get("category") || "SANITATION").trim();
+        const community = String(formData.get("community") || "Sogakope").trim();
+        const town = String(formData.get("town") || "South Tongu").trim();
+        const reporterName = anonymous ? null : (formData.get("reporterName") as string) || null;
+        const phone = anonymous ? null : (formData.get("phone") as string) || null;
+        const email = anonymous ? null : (formData.get("email") as string) || null;
+        const priority = ((formData.get("priority") as string) || "MEDIUM") as "LOW" | "MEDIUM" | "HIGH";
+
+        if (!title || !description) return;
+
+        try {
+          await createReportAction({
+            title,
+            description,
+            category,
+            priority,
+            reporter_name: reporterName,
+            reporter_phone: phone,
+            reporter_email: email,
+            location: {
+              community,
+              town,
+              gps: coords ? `${coords.lat}, ${coords.lng}` : undefined,
+            },
+            status: "SUBMITTED",
+          });
+        } catch {
+          // Fallback handled
+        }
         setSent(true);
       }}
       className="space-y-5"

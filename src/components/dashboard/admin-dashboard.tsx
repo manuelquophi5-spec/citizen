@@ -76,6 +76,19 @@ import { Card, Badge, Button, ProgressBar } from "@/components/ui";
 import { formatGHS, formatDate, percent } from "@/lib/utils";
 import { labelize } from "@/types";
 import type { VolunteerHourEntry } from "./volunteer-dashboard";
+import {
+  getReportsAction,
+  updateReportStatusAction,
+  deleteReportAction,
+  createReportAction,
+} from "@/app/actions/reports";
+import {
+  getVolunteerHoursAction,
+  verifyVolunteerHoursAction,
+  voidVolunteerHoursAction,
+  logVolunteerHoursAction,
+} from "@/app/actions/volunteer";
+import { getDonationHistoryAction } from "@/app/actions/donations";
 import { FilamentStatsOverview, type FilamentStat } from "./filament/filament-stats";
 import { FilamentBadge } from "./filament/filament-badge";
 import { FilamentTable, type FilamentColumn, type FilamentFilterTab } from "./filament/filament-table";
@@ -193,6 +206,11 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Issues state with local status overrides, custom edits, and deleted IDs
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
+  const [liveReports, setLiveReports] = useState<SurveyReport[]>([]);
+  const [liveDonations, setLiveDonations] = useState<typeof donations>([]);
+  const activeDonations = isLive ? liveDonations : donations;
+
   const [statusOverrides, setStatusOverrides] = useState<Record<string, SurveyStatus>>({});
   const [issueFilterTab, setIssueFilterTab] = useState<string>("ALL");
   const [deletedIssueIds, setDeletedIssueIds] = useState<string[]>([]);
@@ -315,16 +333,95 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Load from localStorage
-  useEffect(() => {
+  const fetchLiveAdminData = async () => {
     try {
-      const rawHours = window.localStorage.getItem(VOLUNTEER_STORAGE_KEY);
-      if (rawHours) {
-        setVolunteerEntries(JSON.parse(rawHours));
-      } else {
-        window.localStorage.setItem(VOLUNTEER_STORAGE_KEY, JSON.stringify(INITIAL_VOLUNTEER_ENTRIES));
+      // 1. Live reports
+      const repRes = await getReportsAction();
+      if (repRes.success && repRes.data) {
+        const mappedReports: SurveyReport[] = repRes.data.map((r) => {
+          const loc = (typeof r.location === "object" && r.location !== null ? r.location : {}) as Record<string, any>;
+          return {
+            id: r.id,
+            title: r.title,
+            category: r.category,
+            urgency: r.priority === "HIGH" ? "HIGH" : r.priority === "LOW" ? "LOW" : "MEDIUM",
+            priority: (r.priority as any) || "MEDIUM",
+            community: loc.community || "Sogakope",
+            town: loc.town || "South Tongu",
+            description: r.description,
+            reporterName: r.reporter_name,
+            phone: r.reporter_phone,
+            email: r.reporter_email,
+            occupation: null,
+            latitude: 5.998,
+            longitude: 0.589,
+            suggestedSolution: r.admin_notes || r.official_feedback || null,
+            anonymous: !r.reporter_name,
+            status: (r.status === "DISPATCHED" ? "IN_PROGRESS" : r.status) as any,
+            createdAt: new Date(r.created_at),
+          };
+        });
+        setLiveReports(mappedReports);
       }
 
+      // 2. Live volunteer hours
+      const volRes = await getVolunteerHoursAction();
+      if (volRes.success && volRes.data) {
+        const mappedVol: VolunteerHourEntry[] = volRes.data.map((r) => ({
+          id: r.id,
+          volunteerName: "Volunteer",
+          description: r.activity,
+          initiativeTitle: r.category || "General Volunteering",
+          date: r.date,
+          hours: Number(r.hours),
+          approved: r.status === "VERIFIED",
+          approvedBy: r.verified_by || undefined,
+          approvedAt: r.verified_at || undefined,
+          supervisor: r.supervisor || undefined,
+          fieldNotes: r.field_notes || undefined,
+        }));
+        setVolunteerEntries(mappedVol);
+      }
+
+      // 3. Live donations
+      const donRes = await getDonationHistoryAction();
+      if (donRes.success && donRes.data) {
+        const mappedDonations: typeof donations = donRes.data.map((d) => ({
+          id: d.id,
+          initiativeId: d.initiative_id || null,
+          amount: Number(d.amount),
+          donorName: d.donor_name || null,
+          donorEmail: d.donor_email,
+          anonymous: d.anonymous,
+          corporate: false,
+          status: d.status as any,
+          method: (d.payment_method || "PAYSTACK") as any,
+          reference: d.reference || `REF-${d.id}`,
+          createdAt: new Date(d.created_at),
+        }));
+        setLiveDonations(mappedDonations);
+      }
+    } catch (err) {
+      console.warn("Could not fetch live admin data:", err);
+    }
+  };
+
+  // Load from database / localStorage
+  useEffect(() => {
+    if (isLive) {
+      fetchLiveAdminData();
+    } else {
+      try {
+        const rawHours = window.localStorage.getItem(VOLUNTEER_STORAGE_KEY);
+        if (rawHours) {
+          setVolunteerEntries(JSON.parse(rawHours));
+        } else {
+          window.localStorage.setItem(VOLUNTEER_STORAGE_KEY, JSON.stringify(INITIAL_VOLUNTEER_ENTRIES));
+        }
+      } catch {}
+    }
+
+    try {
       const rawOverrides = window.localStorage.getItem(ISSUES_STORAGE_KEY);
       if (rawOverrides) setStatusOverrides(JSON.parse(rawOverrides));
 
@@ -342,12 +439,23 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
       // LocalStorage fallback
     }
 
-    const handleSyncReports = () => setLocalReports(getLocalReports());
+    const handleSyncReports = () => {
+      if (isLive) {
+        fetchLiveAdminData();
+      } else {
+        setLocalReports(getLocalReports());
+      }
+    };
+
     const handleSyncVolunteerHours = () => {
-      try {
-        const raw = window.localStorage.getItem(VOLUNTEER_STORAGE_KEY);
-        if (raw) setVolunteerEntries(JSON.parse(raw));
-      } catch {}
+      if (isLive) {
+        fetchLiveAdminData();
+      } else {
+        try {
+          const raw = window.localStorage.getItem(VOLUNTEER_STORAGE_KEY);
+          if (raw) setVolunteerEntries(JSON.parse(raw));
+        } catch {}
+      }
     };
 
     window.addEventListener(REPORTS_CHANGED_EVENT, handleSyncReports);
@@ -357,9 +465,16 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
       window.removeEventListener(REPORTS_CHANGED_EVENT, handleSyncReports);
       window.removeEventListener("tcp:volunteer-hours-changed", handleSyncVolunteerHours);
     };
-  }, []);
+  }, [isLive]);
 
-  const handleUpdateStatus = (issueId: string, newStatus: SurveyStatus) => {
+  const handleUpdateStatus = async (issueId: string, newStatus: SurveyStatus) => {
+    if (isLive) {
+      try {
+        await updateReportStatusAction(issueId, newStatus as any, resolutionNotes[issueId]);
+      } catch (err) {
+        console.warn("Failed to update status live:", err);
+      }
+    }
     const next = { ...statusOverrides, [issueId]: newStatus };
     setStatusOverrides(next);
     try {
@@ -373,46 +488,91 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
   };
 
   // Issue CRUD handlers
-  const handleCreateIssueSubmit = (e: React.FormEvent) => {
+  const handleCreateIssueSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!issueTitle.trim() || !issueDesc.trim()) return;
 
-    const newReport = addLocalReport({
-      id: generateLocalReportId(),
-      title: issueTitle,
-      category: issueCategory,
-      urgency: issueUrgency,
-      priority: issueUrgency === "CRITICAL" ? "HIGH" : issueUrgency === "HIGH" ? "HIGH" : "MEDIUM",
-      community: issueCommunity,
-      town: issueTown,
-      description: issueDesc,
-      reporterName: issueName.trim() || null,
-      phone: issuePhone.trim() || null,
-      occupation: null,
-      email: null,
-      latitude: 5.998,
-      longitude: 0.589,
-      suggestedSolution: null,
-      anonymous: !issueName.trim(),
-      status: "SUBMITTED",
-      createdAt: new Date(),
-    });
+    let createdId = `issue-${Date.now()}`;
+    if (isLive) {
+      try {
+        const res = await createReportAction({
+          title: issueTitle.trim(),
+          category: issueCategory,
+          description: issueDesc.trim(),
+          priority: issueUrgency === "CRITICAL" || issueUrgency === "HIGH" ? "HIGH" : "MEDIUM",
+          status: "SUBMITTED",
+          reporter_name: issueName.trim() || null,
+          reporter_phone: issuePhone.trim() || null,
+          reporter_email: null,
+          location: { community: issueCommunity, town: issueTown },
+        });
+        if (res.success && res.data) {
+          createdId = res.data.id;
+          const loc = (typeof res.data.location === "object" && res.data.location !== null ? res.data.location : {}) as Record<string, any>;
+          const created: SurveyReport = {
+            id: res.data.id,
+            title: res.data.title,
+            category: res.data.category,
+            urgency: res.data.priority === "HIGH" ? "HIGH" : "MEDIUM",
+            priority: (res.data.priority as any) || "MEDIUM",
+            community: loc.community || issueCommunity,
+            town: loc.town || issueTown,
+            description: res.data.description,
+            reporterName: res.data.reporter_name,
+            phone: res.data.reporter_phone,
+            email: null,
+            occupation: null,
+            latitude: 5.998,
+            longitude: 0.589,
+            suggestedSolution: null,
+            anonymous: !res.data.reporter_name,
+            status: "SUBMITTED",
+            createdAt: new Date(res.data.created_at),
+          };
+          setLiveReports((prev) => [created, ...prev]);
+        }
+      } catch (err) {
+        console.warn("Failed to create report live:", err);
+      }
+    } else {
+      const newReport = addLocalReport({
+        id: generateLocalReportId(),
+        title: issueTitle,
+        category: issueCategory,
+        urgency: issueUrgency,
+        priority: issueUrgency === "CRITICAL" ? "HIGH" : issueUrgency === "HIGH" ? "HIGH" : "MEDIUM",
+        community: issueCommunity,
+        town: issueTown,
+        description: issueDesc,
+        reporterName: issueName.trim() || null,
+        phone: issuePhone.trim() || null,
+        occupation: null,
+        email: null,
+        latitude: 5.998,
+        longitude: 0.589,
+        suggestedSolution: null,
+        anonymous: !issueName.trim(),
+        status: "SUBMITTED",
+        createdAt: new Date(),
+      });
+      createdId = newReport.id;
+      setLocalReports(getLocalReports());
+    }
 
     addAuditEntry({
       actor: session.name,
       action: "ISSUE_REPORTED",
       entityType: "ISSUE",
-      entityId: newReport.id,
-      details: `Filed community issue: "${newReport.title}" in ${newReport.community} (${newReport.urgency})`,
+      entityId: createdId,
+      details: `Filed community issue: "${issueTitle}" in ${issueCommunity} (${issueUrgency})`,
     });
 
     setNewIssueModalOpen(false);
-    setLocalReports(getLocalReports());
     setIssueTitle("");
     setIssueDesc("");
     setIssueName("");
     setIssuePhone("+233 ");
-    showToast(`Successfully filed issue: "${newReport.title}"`);
+    showToast(`Successfully filed issue: "${issueTitle}"`);
   };
 
   const handleOpenEditIssue = (issue: (SurveyReport | LocalSurveyReport) & { status: SurveyStatus }) => {
@@ -476,9 +636,17 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
     showToast(`Updated issue details for "${editIssueTitle}"`);
   };
 
-  const handleDeleteIssue = (id: string) => {
-    deleteLocalReport(id);
-    setLocalReports(getLocalReports());
+  const handleDeleteIssue = async (id: string) => {
+    if (isLive) {
+      try {
+        await deleteReportAction(id);
+      } catch (err) {
+        console.warn("Failed to delete report live:", err);
+      }
+    } else {
+      deleteLocalReport(id);
+      setLocalReports(getLocalReports());
+    }
     const next = [...deletedIssueIds, id];
     setDeletedIssueIds(next);
     try {
@@ -583,7 +751,14 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
     showToast(`Updated hours entry for ${editVolName}`);
   };
 
-  const handleDeleteVolunteer = (id: string) => {
+  const handleDeleteVolunteer = async (id: string) => {
+    if (isLive) {
+      try {
+        await voidVolunteerHoursAction(id, "Voided by admin");
+      } catch (err) {
+        console.warn("Failed to void volunteer hours live:", err);
+      }
+    }
     const updated = volunteerEntries.filter((v) => v.id !== id);
     setVolunteerEntries(updated);
     try {
@@ -602,14 +777,22 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
     showToast("Volunteer hours record removed");
   };
 
-  const handleToggleVolunteerApproval = (entry: VolunteerHourEntry) => {
+  const handleToggleVolunteerApproval = async (entry: VolunteerHourEntry) => {
+    const willApprove = !entry.approved;
+    if (isLive) {
+      try {
+        await verifyVolunteerHoursAction(entry.id, willApprove, willApprove ? `Approved by ${session.name}` : "Reverted by admin");
+      } catch (err) {
+        console.warn("Failed to verify volunteer hours live:", err);
+      }
+    }
     const updated = volunteerEntries.map((e) =>
       e.id === entry.id
         ? {
             ...e,
-            approved: !e.approved,
-            approvedBy: !e.approved ? session.name : undefined,
-            approvedAt: !e.approved ? new Date().toISOString() : undefined,
+            approved: willApprove,
+            approvedBy: willApprove ? session.name : undefined,
+            approvedAt: willApprove ? new Date().toISOString() : undefined,
           }
         : e
     );
@@ -619,7 +802,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
       window.dispatchEvent(new CustomEvent("tcp:volunteer-hours-changed", { detail: updated }));
     } catch {}
     const volName = entry.volunteerName || "Akua Agbavitor";
-    showToast(!entry.approved ? `Approved ${entry.hours}h for ${volName}` : `Reverted approval for ${volName}`);
+    showToast(willApprove ? `Approved ${entry.hours}h for ${volName}` : `Reverted approval for ${volName}`);
   };
 
   // Initiative CRUD handlers
@@ -689,7 +872,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
   // Combined reports (respects deleted issues and custom edits)
   const allReports = useMemo(() => {
     const local = localReports;
-    const seeded = surveyReports;
+    const seeded = isLive ? liveReports : surveyReports;
     const combined = [...local, ...seeded].filter((r) => !deletedIssueIds.includes(r.id));
     return combined.map((r) => {
       const custom = issueCustomEdits[r.id] || {};
@@ -699,10 +882,10 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
         status: statusOverrides[r.id] ?? (custom.status as SurveyStatus) ?? r.status,
       };
     });
-  }, [localReports, statusOverrides, deletedIssueIds, issueCustomEdits]);
+  }, [localReports, liveReports, isLive, statusOverrides, deletedIssueIds, issueCustomEdits]);
 
   // Key metrics
-  const totalRaised = donations.filter((d) => d.status === "SUCCESS").reduce((s, d) => s + d.amount, 0);
+  const totalRaised = activeDonations.filter((d) => d.status === "SUCCESS").reduce((s, d) => s + d.amount, 0);
   const totalSpent = expenditures.reduce((s, e) => s + e.amount, 0);
   const resolvedIssues = allReports.filter((r) => r.status === "RESOLVED").length;
   const resolutionRate = allReports.length ? Math.round((resolvedIssues / allReports.length) * 100) : 0;
@@ -828,7 +1011,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
 
   const handleExportFinances = () => {
     const headers = ["Type", "Reference", "Entity/Donor", "Category/Method", "Date", "Amount (GHS)"];
-    const donationRows = donations.filter((d) => d.status === "SUCCESS").map((d) => ["DONATION", d.reference, d.anonymous ? "Anonymous" : d.donorName || "Supporter", d.method, formatDate(d.createdAt), d.amount]);
+    const donationRows = activeDonations.filter((d) => d.status === "SUCCESS").map((d) => ["DONATION", d.reference, d.anonymous ? "Anonymous" : d.donorName || "Supporter", d.method, formatDate(d.createdAt), d.amount]);
     const expenditureRows = expenditures.map((e) => ["EXPENDITURE", e.id, e.description, e.category, formatDate(e.date), `-${e.amount}`]);
     downloadCsv("south_tongu_financial_ledger.csv", [headers, ...donationRows, ...expenditureRows]);
     showToast("Exported financial ledger CSV");
@@ -937,7 +1120,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
   // Filtered finances for FilamentTable
   const combinedFinances = useMemo(() => {
     const list: any[] = [];
-    donations
+    activeDonations
       .filter((d) => d.status === "SUCCESS")
       .forEach((d) => {
         list.push({
@@ -990,7 +1173,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
     if (financesFilterTab === "DONATIONS") return list.filter((f) => f.type === "DONATION");
     if (financesFilterTab === "EXPENDITURES") return list.filter((f) => f.type === "EXPENDITURE");
     return list;
-  }, [financesFilterTab, manualDonations, manualExpenditures]);
+  }, [financesFilterTab, manualDonations, manualExpenditures, activeDonations]);
 
   const financeFilterTabs: FilamentFilterTab[] = [
     { id: "ALL", label: "All Ledger Rows", badge: combinedFinances.length },

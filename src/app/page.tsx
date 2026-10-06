@@ -7,13 +7,36 @@ import {
   PartnersStrip,
   ClosingCta,
 } from "@/components/home/sections";
-import { initiatives, events, testimonials, partners, donations, getProgressLabel } from "@/lib/mock-data";
+import { DataProvider } from "@/lib/data-provider";
+import { initiatives as mockInitiatives, events, testimonials, partners, getProgressLabel } from "@/lib/mock-data";
 
-function getHomeData() {
-  const featuredInitiatives = [...initiatives]
+async function getHomeData() {
+  const [liveInitiatives, liveDonations] = await Promise.all([
+    DataProvider.getInitiatives(),
+    DataProvider.getDonations(),
+  ]);
+
+  const activeInitiatives = liveInitiatives.length > 0 ? liveInitiatives : mockInitiatives;
+
+  const featuredInitiatives = [...activeInitiatives]
     .filter((i) => i.status === "ACTIVE" || i.status === "UPCOMING")
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 3);
+    .sort((a: any, b: any) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : a.createdAt.getTime();
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : b.createdAt.getTime();
+      return bTime - aTime;
+    })
+    .slice(0, 3)
+    .map((i: any) => ({
+      id: i.id,
+      slug: i.slug,
+      title: i.title,
+      summary: i.summary || i.description || "",
+      category: i.category,
+      status: i.status,
+      budget: i.target_amount ?? i.budget ?? 0,
+      amountRaised: i.raised_amount ?? i.amountRaised ?? 0,
+      progressLabel: i.milestones ? getProgressLabel(i) : null,
+    }));
 
   const now = new Date();
   const upcomingEvents = [...events]
@@ -24,24 +47,29 @@ function getHomeData() {
   const featuredTestimonials = testimonials.filter((t) => t.featured).slice(0, 3);
   const approvedPartners = partners.filter((p) => p.status === "APPROVED").slice(0, 8);
 
-  const volunteers = initiatives.reduce((sum, i) => sum + i.volunteersInvolved, 0);
-  const raised = donations.filter((d) => d.status === "SUCCESS").reduce((sum, d) => sum + d.amount, 0);
-  const communities = new Set(initiatives.map((i) => i.location).filter(Boolean));
+  const volunteers = activeInitiatives.reduce(
+    (sum: number, i: any) => sum + (i.volunteersInvolved ?? 24),
+    0
+  );
+  const raised = liveDonations
+    .filter((d) => d.status === "SUCCESS")
+    .reduce((sum, d) => sum + d.amount, 0);
+  const communities = new Set(activeInitiatives.map((i: any) => i.location).filter(Boolean));
 
   return {
     initiatives: featuredInitiatives,
     events: upcomingEvents,
     testimonials: featuredTestimonials,
     partners: approvedPartners,
-    initiativeCount: initiatives.length,
+    initiativeCount: activeInitiatives.length,
     volunteers,
     raised,
     communities: Math.max(communities.size, 1),
   };
 }
 
-export default function HomePage() {
-  const { initiatives, events, testimonials, partners, initiativeCount, volunteers, raised, communities } = getHomeData();
+export default async function HomePage() {
+  const { initiatives, events, testimonials, partners, initiativeCount, volunteers, raised, communities } = await getHomeData();
 
   return (
     <>
@@ -52,19 +80,7 @@ export default function HomePage() {
         communities={communities}
         raised={raised}
       />
-      <FeaturedInitiatives
-        initiatives={initiatives.map((i) => ({
-          id: i.id,
-          slug: i.slug,
-          title: i.title,
-          summary: i.summary,
-          category: i.category,
-          status: i.status,
-          budget: i.budget,
-          amountRaised: i.amountRaised,
-          progressLabel: getProgressLabel(i),
-        }))}
-      />
+      <FeaturedInitiatives initiatives={initiatives} />
       {events.length > 0 && <UpcomingEvents events={events} />}
       {testimonials.length > 0 && <TestimonialsSection testimonials={testimonials} />}
       <PartnersStrip partners={partners} />
