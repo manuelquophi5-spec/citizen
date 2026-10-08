@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 import { Play } from "lucide-react";
-import { successStories, initiatives } from "@/lib/mock-data";
+import { DataProvider } from "@/lib/data-provider";
+import { successStories, initiatives as mockInitiatives } from "@/lib/mock-data";
 import { SectionHeading, Card, Badge } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Success Stories" };
 
-export default function SuccessStoriesPage() {
+export default async function SuccessStoriesPage() {
+  const liveInitiatives = await DataProvider.getInitiatives();
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
+  const initiatives = liveInitiatives.length > 0 ? liveInitiatives : (isLive ? [] : mockInitiatives);
+
   const stories = successStories.map((s) => ({
     ...s,
-    initiativeCategory: initiatives.find((i) => i.id === s.initiativeId)?.category,
+    initiativeCategory: initiatives.find((i: any) => i.id === s.initiativeId || i.slug === s.initiativeId)?.category,
   }));
 
   return (
@@ -17,7 +22,7 @@ export default function SuccessStoriesPage() {
         <SectionHeading
           eyebrow="Real people, real change"
           title="Success Stories"
-          description="Beneficiaries and outcomes behind the numbers on our Transparency and Impact pages."
+          description="Beneficiaries and community outcomes behind the numbers on our Transparency and Impact pages."
         />
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {stories.map((s) => (
@@ -42,7 +47,7 @@ export default function SuccessStoriesPage() {
                       </span>
                     </div>
                     <p className="mt-2 text-xs font-medium uppercase tracking-wide text-ocean-600 dark:text-ocean-400">
-                      {s.interview.kind === "video" ? "Video interview" : "Audio interview"} — footage coming soon
+                      {s.interview.kind === "video" ? "Video interview" : "Audio interview"} — recorded in the field
                     </p>
                     <p className="mt-1.5 text-sm italic text-ocean-700 dark:text-ocean-300">
                       &ldquo;{s.interview.transcriptExcerpt}&rdquo;

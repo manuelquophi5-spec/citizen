@@ -100,10 +100,11 @@ export function Footer() {
       <div className="border-t border-ocean-900">
         <div className="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs text-ocean-400 sm:flex-row">
           <p>© {new Date().getFullYear()} The Citizen Project. All rights reserved.</p>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
             <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white">Terms of Use</Link>
             <Link href="/cookies" className="hover:text-white">Cookie Policy</Link>
+            <Link href="/admin/login" className="hover:text-gold-400 text-ocean-400/80 font-mono transition">Assembly Terminal</Link>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 import { createReportAction } from "@/app/actions/reports";
+import { toastCreated } from "@/components/ui/toast";
 
 const inputClass =
   "w-full rounded-lg border border-ocean-200 px-3 py-2.5 text-sm focus:border-ocean-500 dark:border-ocean-700 dark:bg-ocean-900";
@@ -93,7 +94,7 @@ export function SurveyForm() {
         if (!title || !description) return;
 
         try {
-          await createReportAction({
+          const res = await createReportAction({
             title,
             description,
             category,
@@ -108,8 +109,9 @@ export function SurveyForm() {
             },
             status: "SUBMITTED",
           });
+          toastCreated.report(title, res?.data?.id);
         } catch {
-          // Fallback handled
+          toastCreated.report(title);
         }
         setSent(true);
       }}

@@ -11,16 +11,19 @@ import { labelize } from "@/types";
 import { MapPin, Users, Target, CalendarRange } from "lucide-react";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
   const live = await DataProvider.getInitiativeBySlug(params.slug);
   if (live) return { title: live.title, description: live.summary || live.description };
+  if (isLive) return {};
   const mock = getMockInitiativeBySlug(params.slug);
   if (!mock) return {};
   return { title: mock.title, description: mock.summary };
 }
 
 export default async function InitiativeDetailPage({ params }: { params: { slug: string } }) {
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
   const live = await DataProvider.getInitiativeBySlug(params.slug);
-  const mock = getMockInitiativeBySlug(params.slug);
+  const mock = isLive ? null : getMockInitiativeBySlug(params.slug);
   if (!live && !mock) notFound();
 
   const id = live?.id || mock?.id || "";

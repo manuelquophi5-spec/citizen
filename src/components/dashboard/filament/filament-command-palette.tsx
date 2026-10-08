@@ -38,11 +38,13 @@ export function FilamentCommandPalette({
   onClose,
   onNavigateTab,
   onSelectIssue,
+  reports,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onNavigateTab: (tab: any) => void;
   onSelectIssue?: (issueId: string) => void;
+  reports?: any[];
 }) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -227,14 +229,19 @@ export function FilamentCommandPalette({
     ];
 
     // Add search results from issues
-    surveyReports.slice(0, 10).forEach((issue) => {
+    const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
+    const issuesSource = reports && reports.length > 0 ? reports : (isLive ? [] : surveyReports);
+    issuesSource.slice(0, 15).forEach((issue: any) => {
+      const urgency = issue.urgency || issue.priority || "MEDIUM";
+      const community = issue.community || (typeof issue.location === "object" ? issue.location?.community : "South Tongu") || "South Tongu";
+      const town = issue.town || (typeof issue.location === "object" ? issue.location?.town : "") || "";
       list.push({
         id: `issue-${issue.id}`,
         category: "Community Issues",
         title: issue.title,
-        subtitle: `${issue.community} · Reported: ${issue.town}`,
-        badge: issue.urgency,
-        badgeTone: issue.urgency === "CRITICAL" ? "danger" : issue.urgency === "HIGH" ? "warning" : "info",
+        subtitle: `${community}${town ? ` · ${town}` : ""}`,
+        badge: urgency,
+        badgeTone: urgency === "CRITICAL" ? "danger" : urgency === "HIGH" ? "warning" : "info",
         icon: AlertTriangle,
         action: () => {
           onNavigateTab("issues");
@@ -245,7 +252,7 @@ export function FilamentCommandPalette({
     });
 
     return list;
-  }, [onNavigateTab, onClose, onSelectIssue]);
+  }, [onNavigateTab, onClose, onSelectIssue, reports]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return items;

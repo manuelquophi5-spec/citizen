@@ -41,8 +41,9 @@ import {
   Layers,
   Sparkles,
 } from "lucide-react";
-import type { LocalSession } from "@/lib/local-session";
-import { clearSession, setSession, getSession } from "@/lib/local-session";
+import { clearSession, setSession, getSession, type LocalSession } from "@/lib/local-session";
+import { toast, toastCreated } from "@/components/ui/toast";
+import { signOutAction } from "@/app/actions/auth";
 import { initiatives, getInitiativeBySlug, type SurveyReport, type PriorityLevel, type UrgencyLevel, type SurveyStatus } from "@/lib/mock-data";
 import {
   getLocalReports,
@@ -59,7 +60,7 @@ import {
   deleteReportAction,
   updateReportStatusAction,
 } from "@/app/actions/reports";
-import { getDonationHistoryAction } from "@/app/actions/donations";
+import { getDonationHistoryAction, getInitiativesAction } from "@/app/actions/donations";
 import {
   getPriorityVotesAction,
   getPriorityVoteCountsAction,
@@ -246,6 +247,23 @@ export function UserDashboard({
   const [editingTargetSlug, setEditingTargetSlug] = useState<string | null>(null);
   const [newTargetAmount, setNewTargetAmount] = useState(500);
   const [addFavoriteModalOpen, setAddFavoriteModalOpen] = useState(false);
+  const [liveInitiatives, setLiveInitiatives] = useState<any[]>([]);
+
+  const resolveInitiative = useCallback((slugOrId: string) => {
+    const liveMatch = liveInitiatives.find((i) => i.slug === slugOrId || i.id === slugOrId);
+    if (liveMatch) {
+      return {
+        id: liveMatch.id,
+        slug: liveMatch.slug,
+        title: liveMatch.title,
+        summary: liveMatch.summary || liveMatch.description || "",
+        amountRaised: Number(liveMatch.raised_amount || 0),
+        budget: Number(liveMatch.target_amount || 0),
+        category: liveMatch.category,
+      };
+    }
+    return getInitiativeBySlug(slugOrId);
+  }, [liveInitiatives]);
 
   // Polls state
   const [pollVotes, setPollVotes] = useState<Record<string, number>>({
@@ -306,6 +324,12 @@ export function UserDashboard({
             setUserVotedOption(matchOpt.id);
           }
         }
+      }
+
+      // 4. Live initiatives
+      const initRes = await getInitiativesAction();
+      if (initRes.success && initRes.data && initRes.data.length > 0) {
+        setLiveInitiatives(initRes.data);
       }
     } catch (err) {
       console.warn("Could not fetch live user dashboard data:", err);
@@ -463,6 +487,7 @@ export function UserDashboard({
     }
 
     setNewReportModalOpen(false);
+    toastCreated.report(repTitle.trim());
     setRepTitle("");
     setRepDesc("");
     showToast(`Filed civic report: "${repTitle.trim()}"`);
@@ -640,8 +665,10 @@ export function UserDashboard({
     showToast("Resident profile preferences saved!");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     clearSession();
+    await signOutAction();
+    toast.info("Signed out successfully.", "Session Ended");
     router.push("/user/login");
   };
 
@@ -984,7 +1011,7 @@ export function UserDashboard({
                   </div>
                   <div className="mt-3 space-y-2.5">
                     {favoriteSlugs.slice(0, 3).map((slug) => {
-                      const init = getInitiativeBySlug(slug);
+                      const init = resolveInitiative(slug);
                       if (!init) return null;
                       const target = initiativeTargets[slug] || 500;
                       return (
@@ -1315,7 +1342,7 @@ export function UserDashboard({
                   </thead>
                   <tbody className="divide-y divide-ocean-100 dark:divide-ocean-800">
                     {donationsList.map((d) => {
-                      const initiative = d.initiativeSlug ? getInitiativeBySlug(d.initiativeSlug) : null;
+                      const initiative = d.initiativeSlug ? resolveInitiative(d.initiativeSlug) : null;
                       return (
                         <tr key={d.id} className="hover:bg-ocean-50/50 dark:hover:bg-ocean-900/40">
                           <td className="px-4 py-3.5 font-mono text-[11px] text-ocean-600 dark:text-ocean-400">
@@ -1377,7 +1404,7 @@ export function UserDashboard({
               {/* Grid of Watchlist Initiatives */}
               <div className="grid gap-6 sm:grid-cols-2">
                 {favoriteSlugs.map((slug) => {
-                  const init = getInitiativeBySlug(slug);
+                  const init = resolveInitiative(slug);
                   if (!init) return null;
                   const personalGoal = initiativeTargets[slug] || 500;
                   const currentContribution = donationsList
@@ -2042,7 +2069,16 @@ export function UserDashboard({
             </div>
 
             <div className="mt-4 max-h-80 overflow-y-auto space-y-2 pr-1 text-xs">
-              {initiatives
+              {(liveInitiatives.length > 0
+                ? liveInitiatives.map((i) => ({
+                    id: i.id,
+                    slug: i.slug,
+                    title: i.title,
+                    budget: Number(i.target_amount || 0),
+                    amountRaised: Number(i.raised_amount || 0),
+                    category: i.category,
+                  }))
+                : initiatives)
                 .filter((i) => !favoriteSlugs.includes(i.slug))
                 .map((init) => (
                   <div key={init.id} className="flex items-center justify-between p-3 rounded-xl border border-ocean-100 dark:border-ocean-800 hover:bg-ocean-50 dark:hover:bg-ocean-900/40">
@@ -2135,7 +2171,7 @@ export function UserDashboard({
                   <span className="text-ocean-600 dark:text-ocean-400">Project Allocation</span>
                   <span className="font-medium text-ocean-950 dark:text-white">
                     {selectedReceipt.initiativeSlug
-                      ? getInitiativeBySlug(selectedReceipt.initiativeSlug)?.title ?? "South Tongu Civic Fund"
+                      ? resolveInitiative(selectedReceipt.initiativeSlug)?.title ?? "South Tongu Civic Fund"
                       : "South Tongu Civic Fund"}
                   </span>
                 </div>
@@ -2214,7 +2250,7 @@ export function UserDashboard({
                     {donationsList.map((d) => (
                       <tr key={d.id}>
                         <td className="p-2.5 font-mono text-[11px]">{formatDate(d.date)}</td>
-                        <td className="p-2.5 font-medium">{d.initiativeSlug ? getInitiativeBySlug(d.initiativeSlug)?.title : "Civic Fund"}</td>
+                        <td className="p-2.5 font-medium">{d.initiativeSlug ? resolveInitiative(d.initiativeSlug)?.title : "Civic Fund"}</td>
                         <td className="p-2.5 font-mono text-[10px] text-ocean-400">{d.ref || d.id}</td>
                         <td className="p-2.5 text-right font-mono font-bold">{formatGHS(d.amount)}</td>
                       </tr>

@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { initiatives, events, blogPosts, partners } from "@/lib/mock-data";
+import { DataProvider } from "@/lib/data-provider";
+import { initiatives as mockInitiatives, events, blogPosts, partners } from "@/lib/mock-data";
 import { SectionHeading, Card, Badge } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Search" };
 
-export default function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
   const q = (searchParams.q ?? "").trim();
   const needle = q.toLowerCase();
   const matches = (...fields: (string | null | undefined)[]) =>
     fields.some((f) => f && f.toLowerCase().includes(needle));
 
-  const matchedInitiatives = q ? initiatives.filter((i) => matches(i.title, i.summary)).slice(0, 8) : [];
+  const liveInitiatives = await DataProvider.getInitiatives();
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
+  const allInitiatives = liveInitiatives.length > 0 ? liveInitiatives : (isLive ? [] : mockInitiatives);
+
+  const matchedInitiatives = q ? allInitiatives.filter((i: any) => matches(i.title, i.summary || i.description)).slice(0, 8) : [];
   const matchedEvents = q ? events.filter((e) => matches(e.title, e.summary)).slice(0, 8) : [];
   const matchedPosts = q ? blogPosts.filter((p) => p.published && matches(p.title, p.excerpt)).slice(0, 8) : [];
   const matchedPartners = q

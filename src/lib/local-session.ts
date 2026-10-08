@@ -59,17 +59,25 @@ export function getSession(): LocalSession | null {
   }
 }
 
+export function isCitizenRole(role?: string | null): boolean {
+  return role === "citizen" || role === "user";
+}
+
 export function setSession(session: Omit<LocalSession, "loggedInAt"> & { role?: UserRole; userId?: string }) {
   if (typeof window === "undefined") return;
   try {
+    const normalizedRole: UserRole = session.role === "citizen" ? "user" : (session.role ?? "user");
     const full: LocalSession = {
       name: session.name,
       email: session.email,
-      role: session.role ?? "user",
+      role: normalizedRole,
       loggedInAt: new Date().toISOString(),
       userId: session.userId,
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
+    try {
+      document.cookie = `tcp_session=${encodeURIComponent(JSON.stringify(full))}; path=/; max-age=604800; SameSite=Lax`;
+    } catch {}
     window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT, { detail: full }));
   } catch {
     // localStorage unavailable — the dummy flow just won't persist across reloads.
@@ -90,6 +98,9 @@ export function clearSession() {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(STORAGE_KEY);
+    try {
+      document.cookie = "tcp_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    } catch {}
     window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT, { detail: null }));
   } catch {
     // no-op

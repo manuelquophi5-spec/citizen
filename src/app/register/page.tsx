@@ -18,6 +18,8 @@ import {
   Users,
 } from "lucide-react";
 import { setSession, nameFromEmail } from "@/lib/local-session";
+import { signUpAction } from "@/app/actions/auth";
+import { toast, toastCreated } from "@/components/ui/toast";
 
 const ELECTORAL_AREAS = [
   "Sogakope Central",
@@ -78,7 +80,7 @@ function RegisterForm() {
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password) {
       setError("Please fill in all required fields.");
@@ -88,42 +90,63 @@ function RegisterForm() {
     setPending(true);
     setError(null);
 
-    // Save session
-    setSession({
-      name: name.trim(),
-      email: email.trim(),
-      role: activeRole,
-    });
-
     try {
-      if (activeRole === "user") {
-        // Save citizen resident profile
-        window.localStorage.setItem(
-          "tcp:citizen-profile",
-          JSON.stringify({
-            name: name.trim(),
-            email: email.trim(),
-            area: electoralArea,
-            commChannel,
-          })
-        );
-      } else {
-        // Save volunteer initial skills and emergency readiness
-        window.localStorage.setItem(
-          "tcp:volunteer-skills",
-          JSON.stringify(selectedSkills)
-        );
-        window.localStorage.setItem(
-          "tcp:volunteer-emergency",
-          JSON.stringify(emergencyReady)
-        );
-      }
-    } catch {}
+      const res = await signUpAction({
+        email: email.trim(),
+        fullName: name.trim(),
+        role: activeRole === "volunteer" ? "volunteer" : "citizen",
+        electoralArea,
+        skills: activeRole === "volunteer" ? selectedSkills : [],
+      });
 
-    const target = activeRole === "volunteer" ? "/volunteer" : "/user";
-    setTimeout(() => {
+      if (!res.success || !res.data) {
+        const errMsg = res.error || "Registration failed. Please try again.";
+        setError(errMsg);
+        toast.error(errMsg, "Registration Error");
+        setPending(false);
+        return;
+      }
+
+      setSession({
+        name: res.data.name,
+        email: res.data.email,
+        role: res.data.role,
+        userId: res.data.userId,
+      });
+
+      try {
+        if (activeRole === "user") {
+          window.localStorage.setItem(
+            "tcp:citizen-profile",
+            JSON.stringify({
+              name: name.trim(),
+              email: email.trim(),
+              area: electoralArea,
+              commChannel,
+            })
+          );
+        } else {
+          window.localStorage.setItem(
+            "tcp:volunteer-skills",
+            JSON.stringify(selectedSkills)
+          );
+          window.localStorage.setItem(
+            "tcp:volunteer-emergency",
+            JSON.stringify(emergencyReady)
+          );
+        }
+      } catch {}
+
+      toastCreated.account(res.data.name, res.data.role);
+
+      const target = activeRole === "volunteer" ? "/volunteer" : "/user";
       router.push(target);
-    }, 300);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Failed to create account.";
+      setError(errMsg);
+      toast.error(errMsg, "Registration Error");
+      setPending(false);
+    }
   };
 
   return (

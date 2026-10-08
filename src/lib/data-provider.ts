@@ -607,11 +607,12 @@ class InMemoryDatabase {
   }
 
   // --- Donations ---
-  getDonations(filter?: { userId?: string; initiativeId?: string }): DonationRow[] {
+  getDonations(filter?: { userId?: string; initiativeId?: string; status?: DonationStatus }): DonationRow[] {
     return this.donations
       .filter((d) => {
         if (filter?.userId && d.user_id !== filter.userId) return false;
         if (filter?.initiativeId && d.initiative_id !== filter.initiativeId) return false;
+        if (filter?.status && d.status !== filter.status) return false;
         return true;
       })
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -1042,13 +1043,14 @@ export const DataProvider = {
   },
 
   // Donations
-  async getDonations(filter?: { userId?: string; initiativeId?: string }): Promise<DonationRow[]> {
+  async getDonations(filter?: { userId?: string; initiativeId?: string; status?: DonationStatus }): Promise<DonationRow[]> {
     if (isLiveSupabaseAvailable()) {
       try {
         const supabase = createAdminClient();
         let query = supabase.from("donations").select("*");
         if (filter?.userId) query = query.eq("user_id", filter.userId);
         if (filter?.initiativeId) query = query.eq("initiative_id", filter.initiativeId);
+        if (filter?.status) query = query.eq("status", filter.status);
         const { data, error } = await query.order("created_at", { ascending: false });
         if (!error && data) return data as DonationRow[];
       } catch {

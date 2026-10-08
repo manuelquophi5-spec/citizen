@@ -41,6 +41,8 @@ export async function createReportAction(
     revalidatePath("/admin");
     revalidatePath("/user");
     revalidatePath("/community-map");
+    revalidatePath("/impact");
+    revalidatePath("/");
 
     return { success: true, data: report };
   } catch (err: unknown) {
@@ -83,6 +85,8 @@ export async function updateReportStatusAction(
     revalidatePath("/admin");
     revalidatePath("/user");
     revalidatePath("/community-map");
+    revalidatePath("/impact");
+    revalidatePath("/");
 
     return { success: true, data: updated };
   } catch (err: unknown) {
@@ -102,6 +106,8 @@ export async function deleteReportAction(id: string): Promise<ActionResult<boole
     revalidatePath("/admin");
     revalidatePath("/user");
     revalidatePath("/community-map");
+    revalidatePath("/impact");
+    revalidatePath("/");
 
     return { success: true, data: deleted };
   } catch (err: unknown) {

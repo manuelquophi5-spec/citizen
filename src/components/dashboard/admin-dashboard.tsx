@@ -51,8 +51,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { LocalSession } from "@/lib/local-session";
-import { clearSession } from "@/lib/local-session";
+import { clearSession, type LocalSession } from "@/lib/local-session";
+import { toast, toastCreated } from "@/components/ui/toast";
+import { signOutAction } from "@/app/actions/auth";
 import {
   initiatives,
   donations,
@@ -1419,8 +1420,10 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
             </Link>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 clearSession();
+                await signOutAction();
+                toast.info("Signed out of District Operations Console.", "Session Ended");
                 router.push("/admin/login");
               }}
               className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
@@ -1960,7 +1963,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
           {activeTab === "map" && (
             <div className="space-y-4">
               <div className="overflow-hidden rounded-xl border border-ocean-200/80 bg-white p-4 shadow-xs dark:border-ocean-800 dark:bg-[#0c1322]">
-                <CommunityMapExplorer seededReports={surveyReports} />
+                <CommunityMapExplorer seededReports={allReports} />
               </div>
             </div>
           )}
@@ -2214,6 +2217,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                 setNewInitiativeModalOpen(false);
                 setInitTitle("");
                 setInitSummary("");
+                toastCreated.initiative(newInit.title);
                 showToast(`Created initiative "${newInit.title}"`);
               }}
               className="mt-4 space-y-3.5 text-xs"
@@ -3370,6 +3374,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         onNavigateTab={(t) => setActiveTab(t)}
+        reports={allReports}
         onSelectIssue={(id) => {
           const found = allReports.find((r) => r.id === id);
           if (found) setSelectedIssue(found);

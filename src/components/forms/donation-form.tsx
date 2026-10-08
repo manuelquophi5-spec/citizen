@@ -5,6 +5,7 @@ import { CheckCircle2, ShieldCheck, Lock, Smartphone, CreditCard, X, Loader2, Ar
 import { cn, formatGHS, generateReference } from "@/lib/utils";
 import { Button, Card, Badge } from "@/components/ui";
 import { createDonationAction } from "@/app/actions/donations";
+import { toastCreated } from "@/components/ui/toast";
 
 const AMOUNTS = [50, 100, 250, 500];
 
@@ -56,6 +57,7 @@ export function DonationForm({ initiativeId }: { initiativeId?: string }) {
       // Handled
     }
 
+    toastCreated.donation(finalAmount, "GHS", anonymous ? undefined : donorName || undefined);
     setIsProcessing(false);
     setIsPaystackOpen(false);
     setSent(true);

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { setSession } from "@/lib/local-session";
 import { signInAction } from "@/app/actions/auth";
+import { toast } from "@/components/ui/toast";
 
 function LoginForm() {
   const router = useRouter();
@@ -56,10 +57,13 @@ function LoginForm() {
       const res = await signInAction({
         email: email.trim(),
         role: activeRole === "volunteer" ? "volunteer" : "citizen",
+        password: password.trim() || undefined,
       });
 
       if (!res.success || !res.data) {
-        setError(res.error || "Authentication failed. Please verify your email.");
+        const errMsg = res.error || "Authentication failed. Please verify your email.";
+        setError(errMsg);
+        toast.error(errMsg, "Sign In Failed");
         setPending(false);
         return;
       }
@@ -67,14 +71,26 @@ function LoginForm() {
       setSession({
         name: res.data.name,
         email: res.data.email,
-        role: res.data.role,
+        role: res.data.role === "citizen" ? "user" : res.data.role,
         userId: res.data.userId,
       });
 
-      const target = redirectParam || (res.data.role === "volunteer" ? "/volunteer" : "/user");
-      router.push(target);
+      toast.success(`Welcome back, ${res.data.name}!`, "Signed In Successfully");
+
+      const target =
+        redirectParam ||
+        (res.data.role === "admin"
+          ? "/admin"
+          : res.data.role === "volunteer"
+          ? "/volunteer"
+          : "/user");
+
+      router.replace(target);
+      router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Authentication error.");
+      const errMsg = err instanceof Error ? err.message : "Authentication error.";
+      setError(errMsg);
+      toast.error(errMsg, "Sign In Error");
       setPending(false);
     }
   };

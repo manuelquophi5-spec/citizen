@@ -11,18 +11,23 @@ import { DataProvider } from "@/lib/data-provider";
 import { initiatives as mockInitiatives, events, testimonials, partners, getProgressLabel } from "@/lib/mock-data";
 
 async function getHomeData() {
-  const [liveInitiatives, liveDonations] = await Promise.all([
+  const [liveInitiatives, liveDonations, liveVolunteerHours] = await Promise.all([
     DataProvider.getInitiatives(),
-    DataProvider.getDonations(),
+    DataProvider.getDonations({ status: "SUCCESS" }),
+    DataProvider.getVolunteerHours({ status: "VERIFIED" }),
   ]);
 
-  const activeInitiatives = liveInitiatives.length > 0 ? liveInitiatives : mockInitiatives;
+  const isLive = process.env.NEXT_PUBLIC_INTEGRITY_MODE === "live";
+  const activeInitiatives =
+    liveInitiatives.length > 0
+      ? liveInitiatives
+      : (isLive ? [] : mockInitiatives);
 
   const featuredInitiatives = [...activeInitiatives]
     .filter((i) => i.status === "ACTIVE" || i.status === "UPCOMING")
     .sort((a: any, b: any) => {
-      const aTime = a.created_at ? new Date(a.created_at).getTime() : a.createdAt.getTime();
-      const bTime = b.created_at ? new Date(b.created_at).getTime() : b.createdAt.getTime();
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : a.createdAt ? a.createdAt.getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : b.createdAt ? b.createdAt.getTime() : 0;
       return bTime - aTime;
     })
     .slice(0, 3)
@@ -33,8 +38,8 @@ async function getHomeData() {
       summary: i.summary || i.description || "",
       category: i.category,
       status: i.status,
-      budget: i.target_amount ?? i.budget ?? 0,
-      amountRaised: i.raised_amount ?? i.amountRaised ?? 0,
+      budget: Number(i.target_amount ?? i.budget ?? 0),
+      amountRaised: Number(i.raised_amount ?? i.amountRaised ?? 0),
       progressLabel: i.milestones ? getProgressLabel(i) : null,
     }));
 
@@ -47,13 +52,10 @@ async function getHomeData() {
   const featuredTestimonials = testimonials.filter((t) => t.featured).slice(0, 3);
   const approvedPartners = partners.filter((p) => p.status === "APPROVED").slice(0, 8);
 
-  const volunteers = activeInitiatives.reduce(
-    (sum: number, i: any) => sum + (i.volunteersInvolved ?? 24),
-    0
-  );
-  const raised = liveDonations
-    .filter((d) => d.status === "SUCCESS")
-    .reduce((sum, d) => sum + d.amount, 0);
+  const uniqueVolunteersCount = new Set(liveVolunteerHours.map((h) => h.volunteer_id).filter(Boolean)).size;
+  const volunteers = uniqueVolunteersCount > 0 ? uniqueVolunteersCount : 24;
+
+  const raised = liveDonations.reduce((sum, d) => sum + Number(d.amount), 0);
   const communities = new Set(activeInitiatives.map((i: any) => i.location).filter(Boolean));
 
   return {

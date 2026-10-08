@@ -19,7 +19,7 @@ export default function DedicatedUserPage() {
 
   useEffect(() => {
     const existing = getSession();
-    if (!existing || existing.role !== "user") {
+    if (!existing || (existing.role !== "user" && existing.role !== "citizen")) {
       router.replace("/login?role=user&redirect=/user");
       return;
     }
@@ -30,7 +30,7 @@ export default function DedicatedUserPage() {
 
     const handleSessionSync = () => {
       const current = getSession();
-      if (!current || current.role !== "user") {
+      if (!current || (current.role !== "user" && current.role !== "citizen")) {
         router.replace("/login?role=user&redirect=/user");
       } else {
         setSessionState(current);

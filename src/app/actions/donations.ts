@@ -39,6 +39,9 @@ export async function recordDonationAction(
     revalidatePath("/initiatives");
     revalidatePath("/user");
     revalidatePath("/admin");
+    revalidatePath("/transparency");
+    revalidatePath("/impact");
+    revalidatePath("/");
 
     return { success: true, data: donation };
   } catch (err: unknown) {
@@ -50,6 +53,7 @@ export async function recordDonationAction(
 export async function getDonationHistoryAction(filter?: {
   userId?: string;
   initiativeId?: string;
+  status?: DonationStatus;
 }): Promise<ActionResult<DonationRow[]>> {
   try {
     const donations = await DataProvider.getDonations(filter);

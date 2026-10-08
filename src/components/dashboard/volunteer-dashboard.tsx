@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import type { LocalSession } from "@/lib/local-session";
 import { clearSession, setSession, getSession } from "@/lib/local-session";
+import { toast, toastCreated } from "@/components/ui/toast";
+import { signOutAction } from "@/app/actions/auth";
 import { initiatives, events } from "@/lib/mock-data";
 import {
   getVolunteerHoursAction,
@@ -174,10 +176,19 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
   // Create / Edit Form State
   const [formDescription, setFormDescription] = useState("");
   const [formInitiative, setFormInitiative] = useState(initiatives[0]?.title ?? "General Volunteering");
+  const [activeInitiatives, setActiveInitiatives] = useState<Array<{ id: string; title: string }>>([]);
   const [formHours, setFormHours] = useState("4");
   const [formDate, setFormDate] = useState(new Date().toISOString().split("T")[0]);
   const [formSupervisor, setFormSupervisor] = useState("");
   const [formNotes, setFormNotes] = useState("");
+
+  useEffect(() => {
+    getInitiativesAction().then((res) => {
+      if (res.success && res.data && res.data.length > 0) {
+        setActiveInitiatives(res.data.map((i) => ({ id: i.id, title: i.title })));
+      }
+    });
+  }, []);
 
   // Event Deployments & Shift Management
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>([]);
@@ -305,9 +316,11 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     clearSession();
-    router.push("/");
+    await signOutAction();
+    toast.info("Signed out of Volunteer Portal.", "Session Ended");
+    router.push("/volunteer/login");
   };
 
   // Metrics calculations
@@ -448,6 +461,7 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
     const updated = [newEntry, ...entries];
     saveEntries(updated);
     setShowLogModal(false);
+    toastCreated.volunteerHours(newEntry.hours, newEntry.description);
     showToast(`Logged ${newEntry.hours}h for review by District Coordinator`);
   };
 
@@ -2061,7 +2075,7 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
                   onChange={(e) => setFormInitiative(e.target.value)}
                   className="w-full rounded-lg border border-ocean-200 px-3 py-2 text-xs focus:border-ocean-500 dark:border-ocean-700 dark:bg-ocean-800 dark:text-white"
                 >
-                  {initiatives.map((i) => (
+                  {(activeInitiatives.length > 0 ? activeInitiatives : initiatives).map((i) => (
                     <option key={i.id} value={i.title}>
                       {i.title}
                     </option>
@@ -2199,7 +2213,7 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
                   onChange={(e) => setFormInitiative(e.target.value)}
                   className="w-full rounded-lg border border-ocean-200 px-3 py-2 text-xs focus:border-ocean-500 dark:border-ocean-700 dark:bg-ocean-800 dark:text-white"
                 >
-                  {initiatives.map((i) => (
+                  {(activeInitiatives.length > 0 ? activeInitiatives : initiatives).map((i) => (
                     <option key={i.id} value={i.title}>
                       {i.title}
                     </option>
