@@ -30,7 +30,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // Continue cleanly if Supabase is in demo/offline mode or credentials pending
+  }
 
   return response;
 }

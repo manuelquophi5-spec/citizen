@@ -7,7 +7,28 @@ import { Button, Card, Badge } from "@/components/ui";
 import { createDonationAction } from "@/app/actions/donations";
 import { toastCreated } from "@/components/ui/toast";
 
-const AMOUNTS = [50, 100, 250, 500];
+const DONATION_TIERS = [
+  {
+    amount: 50,
+    title: "Learning Pack",
+    desc: "Classroom notebooks & basic learning supplies for students",
+  },
+  {
+    amount: 100,
+    title: "Youth Workshop",
+    desc: "Civic leadership training materials & exercises",
+  },
+  {
+    amount: 250,
+    title: "Sanitation Kit",
+    desc: "Community waste bins & cleanup tools for local drives",
+  },
+  {
+    amount: 500,
+    title: "Assembly Dialogue",
+    desc: "Convening support for youth-elder civic forums & town halls",
+  },
+];
 
 export function DonationForm({ initiativeId }: { initiativeId?: string }) {
   const [amount, setAmount] = useState(100);
@@ -147,32 +168,79 @@ export function DonationForm({ initiativeId }: { initiativeId?: string }) {
 
         {/* Amount Selector */}
         <div>
-          <p className="mb-2 text-sm font-medium text-ocean-800 dark:text-ocean-200">Select Amount (GHS)</p>
-          <div className="grid grid-cols-4 gap-2">
-            {AMOUNTS.map((a) => (
-              <button
-                type="button"
-                key={a}
-                onClick={() => { setAmount(a); setCustomAmount(""); }}
-                className={cn(
-                  "rounded-lg border py-2.5 text-sm font-semibold transition",
-                  !customAmount && amount === a
-                    ? "border-ocean-700 bg-ocean-700 text-white"
-                    : "border-ocean-200 text-ocean-700 hover:border-ocean-400 dark:border-ocean-700 dark:text-ocean-200"
-                )}
-              >
-                {a}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-2.5">
+            <label className="text-sm font-semibold text-ocean-950 dark:text-white">
+              Select Contribution Tier
+            </label>
+            <span className="text-xs font-mono text-ocean-500">Ghana Cedis (GH₵)</span>
           </div>
-          <input
-            type="number"
-            min={1}
-            placeholder="Or enter a custom amount (GHS)"
-            value={customAmount}
-            onChange={(e) => setCustomAmount(e.target.value)}
-            className="mt-2 w-full rounded-lg border border-ocean-200 px-3 py-2.5 text-sm focus:border-ocean-500 dark:border-ocean-700 dark:bg-ocean-900"
-          />
+
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {DONATION_TIERS.map((tier) => {
+              const isSelected = !customAmount && amount === tier.amount;
+              return (
+                <button
+                  type="button"
+                  key={tier.amount}
+                  onClick={() => {
+                    setAmount(tier.amount);
+                    setCustomAmount("");
+                  }}
+                  className={cn(
+                    "flex flex-col items-start rounded-xl border p-3.5 text-left transition-all duration-150",
+                    isSelected
+                      ? "border-ocean-700 bg-ocean-50/70 shadow-sm ring-1 ring-ocean-700 dark:border-gold-400 dark:bg-ocean-800/80 dark:ring-gold-400"
+                      : "border-ocean-200/90 bg-white hover:border-ocean-300 hover:bg-ocean-50/30 dark:border-ocean-800 dark:bg-ocean-900/40 dark:hover:border-ocean-700"
+                  )}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span
+                      className={cn(
+                        "font-mono text-base font-bold",
+                        isSelected ? "text-ocean-900 dark:text-gold-300" : "text-ocean-950 dark:text-white"
+                      )}
+                    >
+                      GH₵ {tier.amount}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                        isSelected
+                          ? "bg-ocean-700 text-white dark:bg-gold-400 dark:text-ocean-950"
+                          : "bg-ocean-100 text-ocean-700 dark:bg-ocean-800 dark:text-ocean-300"
+                      )}
+                    >
+                      {tier.title}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-ocean-600 dark:text-ocean-400 leading-snug">
+                    {tier.desc}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3">
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-mono font-medium text-ocean-500">
+                GH₵
+              </span>
+              <input
+                type="number"
+                min={1}
+                placeholder="Or enter custom amount in GH₵ (e.g. 150)"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="w-full rounded-xl border border-ocean-200 pl-11 pr-3 py-2.5 text-sm font-mono text-ocean-950 placeholder:font-sans placeholder:text-ocean-400 focus:border-ocean-600 focus:ring-1 focus:ring-ocean-600 dark:border-ocean-700 dark:bg-ocean-900 dark:text-white"
+              />
+            </div>
+            {customAmount && Number(customAmount) > 0 && (
+              <p className="mt-1 text-xs text-ocean-600 dark:text-ocean-400">
+                Custom donation pledged: <strong className="font-mono text-ocean-950 dark:text-white">{formatGHS(Number(customAmount))}</strong> directly allocated to community projects.
+              </p>
+            )}
+          </div>
         </div>
 
         {initiativeId && (

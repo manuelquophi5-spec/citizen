@@ -1,9 +1,27 @@
 import type { Metadata } from "next";
 import { DataProvider } from "@/lib/data-provider";
 import { SectionHeading } from "@/components/ui";
-import { CommunityMapExplorer } from "@/components/community-map-explorer";
+import dynamic from "next/dynamic";
 
-export const metadata: Metadata = { title: "Community Map" };
+const CommunityMapExplorer = dynamic(
+  () => import("@/components/community-map-explorer").then((m) => m.CommunityMapExplorer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mt-6 flex h-[480px] w-full items-center justify-center rounded-2xl bg-ocean-50 dark:bg-ocean-900/40">
+        <div className="flex items-center gap-2 text-sm text-ocean-600 dark:text-ocean-400">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-ocean-600 border-t-transparent" />
+          <span>Loading South Tongu Community Map…</span>
+        </div>
+      </div>
+    ),
+  }
+);
+
+export const metadata: Metadata = {
+  title: "Community Map · The Citizen Project",
+  description: "Interactive civic issue map across South Tongu District, showing reported community challenges, verification status, and triage progress.",
+};
 
 export default async function CommunityMapPage() {
   const reports = await DataProvider.getReports();

@@ -49,6 +49,7 @@ import {
   Trash2,
   ArrowRight,
   LogOut,
+  ImagePlus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { clearSession, type LocalSession } from "@/lib/local-session";
@@ -102,6 +103,7 @@ import { AdminApplicationsDesk } from "./admin/admin-applications-desk";
 import { AdminCertificateIssuer } from "./admin/admin-certificate-issuer";
 import { AdminEventsManager } from "./admin/admin-events-manager";
 import { AdminBlogCms } from "./admin/admin-blog-cms";
+import { AdminMediaLibrary } from "./admin/admin-media-library";
 import { AdminAuditLog } from "./admin/admin-audit-log";
 import { AdminSubscribersHub } from "./admin/admin-subscribers-hub";
 import { AdminSettings } from "./admin/admin-settings";
@@ -132,6 +134,7 @@ export type AdminTab =
   | "initiatives"
   | "events"
   | "blog"
+  | "media"
   | "finances"
   | "audit"
   | "subscribers"
@@ -293,6 +296,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
   const [initBudget, setInitBudget] = useState(25000);
   const [initLocation, setInitLocation] = useState("Sogakope Central");
   const [initSummary, setInitSummary] = useState("");
+  const [initCoverImage, setInitCoverImage] = useState("");
 
   // Form states for Edit Initiative
   const [editInitTitle, setEditInitTitle] = useState("");
@@ -300,6 +304,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
   const [editInitBudget, setEditInitBudget] = useState(0);
   const [editInitLocation, setEditInitLocation] = useState("");
   const [editInitSummary, setEditInitSummary] = useState("");
+  const [editInitCoverImage, setEditInitCoverImage] = useState("");
   const [editInitStatus, setEditInitStatus] = useState<"UPCOMING" | "ACTIVE" | "COMPLETED">("ACTIVE");
 
   // Manual finances state
@@ -814,6 +819,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
     setEditInitBudget(init.budget);
     setEditInitLocation(init.location || "Sogakope Central");
     setEditInitSummary(init.description || init.summary);
+    setEditInitCoverImage(init.coverImage || "");
     setEditInitStatus(init.status);
   };
 
@@ -830,6 +836,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
         location: editInitLocation,
         description: editInitSummary,
         summary: editInitSummary,
+        coverImage: editInitCoverImage.trim() || null,
         status: editInitStatus,
       },
       session.name
@@ -984,6 +991,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
         { id: "initiatives" as AdminTab, label: "Initiatives & Capital", icon: FolderGit2 },
         { id: "events" as AdminTab, label: "Community Events", icon: Calendar },
         { id: "blog" as AdminTab, label: "News & Editorial", icon: BookOpen },
+        { id: "media" as AdminTab, label: "Media & Gallery", icon: ImagePlus },
       ],
     },
     {
@@ -1323,16 +1331,11 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                     className={cn(
                       "group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-xs font-semibold transition",
                       isActive
-                        ? "bg-amber-500/10 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200"
+                        ? "bg-amber-500/15 text-amber-900 ring-1 ring-amber-500/30 dark:bg-amber-500/20 dark:text-amber-200 dark:ring-amber-400/25"
                         : "text-ocean-700 hover:bg-ocean-100/60 dark:text-ocean-300 dark:hover:bg-ocean-900/60",
                       isSidebarCollapsed && "justify-center px-0"
                     )}
                   >
-                    {/* Active left pill indicator */}
-                    {isActive && (
-                      <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-amber-500" />
-                    )}
-
                     <Icon
                       className={cn(
                         "h-4 w-4 shrink-0 transition",
@@ -1540,6 +1543,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                 {activeTab === "initiatives" && "Civic Initiatives & Milestones"}
                 {activeTab === "events" && "Community Outreach Events & RSVPs"}
                 {activeTab === "blog" && "Civic News & Editorial CMS"}
+                {activeTab === "media" && "Media Library & Outreach Gallery"}
                 {activeTab === "finances" && "Financial Ledger & Paystack Audit"}
                 {activeTab === "audit" && "System Audit Trail & Operations Log"}
                 {activeTab === "subscribers" && "Newsletter & Broadcast Hub"}
@@ -1869,8 +1873,14 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                 return (
                   <div
                     key={init.id}
-                    className="rounded-xl border border-ocean-100 bg-white p-5 shadow-sm dark:border-ocean-800 dark:bg-ocean-950"
+                    className="rounded-xl border border-ocean-100 bg-white p-5 shadow-sm dark:border-ocean-800 dark:bg-ocean-950 overflow-hidden"
                   >
+                    {init.coverImage && (
+                      <div className="relative -mx-5 -mt-5 mb-4 h-32 overflow-hidden border-b border-ocean-100 dark:border-ocean-800 bg-ocean-100 dark:bg-ocean-900">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={init.coverImage} alt={init.title} className="h-full w-full object-cover" />
+                      </div>
+                    )}
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ocean-400">
                         {init.category}
@@ -1988,7 +1998,12 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
             <AdminBlogCms coordinatorName={session.name} onNotify={showToast} />
           )}
 
-          {/* TAB 11: AUDIT TRAIL */}
+          {/* TAB 11: MEDIA & GALLERY LIBRARY */}
+          {activeTab === "media" && (
+            <AdminMediaLibrary onNotify={showToast} />
+          )}
+
+          {/* TAB 12: AUDIT TRAIL */}
           {activeTab === "audit" && (
             <AdminAuditLog onNotify={showToast} />
           )}
@@ -2190,7 +2205,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                   title: initTitle,
                   summary: initSummary || "Community-driven civic initiative funded through district transparency partnerships.",
                   description: initSummary || "Community-driven civic initiative funded through district transparency partnerships.",
-                  coverImage: null,
+                  coverImage: initCoverImage.trim() || null,
                   category: initCategory,
                   objectives: ["Civic mobilization", "Infrastructure restoration", "Community oversight"],
                   sdgTags: ["SDG 6: Clean Water", "SDG 11: Sustainable Communities"],
@@ -2217,6 +2232,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                 setNewInitiativeModalOpen(false);
                 setInitTitle("");
                 setInitSummary("");
+                setInitCoverImage("");
                 toastCreated.initiative(newInit.title);
                 showToast(`Created initiative "${newInit.title}"`);
               }}
@@ -2263,6 +2279,27 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                     onChange={(e) => setInitBudget(Number(e.target.value))}
                     className="w-full rounded-lg border border-ocean-200 bg-white p-2 text-xs text-ocean-900 focus:border-amber-500 focus:outline-none dark:border-ocean-700 dark:bg-ocean-900 dark:text-white"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-ocean-700 dark:text-ocean-300 mb-1">
+                  Cover Image URL (Optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. /uploads/clinic-water.jpg or /images/outreach/..."
+                    value={initCoverImage}
+                    onChange={(e) => setInitCoverImage(e.target.value)}
+                    className="flex-1 rounded-lg border border-ocean-200 bg-white p-2 text-xs text-ocean-900 focus:border-amber-500 focus:outline-none dark:border-ocean-700 dark:bg-ocean-900 dark:text-white"
+                  />
+                  {initCoverImage && (
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded border border-ocean-200 dark:border-ocean-700">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={initCoverImage} alt="Cover preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3250,6 +3287,27 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="COMPLETED">COMPLETED</option>
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-ocean-700 dark:text-ocean-300 mb-1">
+                  Cover Image URL (Optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. /uploads/clinic-water.jpg or /images/outreach/..."
+                    value={editInitCoverImage}
+                    onChange={(e) => setEditInitCoverImage(e.target.value)}
+                    className="flex-1 rounded-lg border border-ocean-200 bg-white p-2 text-ocean-900 focus:border-amber-500 focus:outline-none dark:border-ocean-700 dark:bg-ocean-900 dark:text-white"
+                  />
+                  {editInitCoverImage && (
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded border border-ocean-200 dark:border-ocean-700">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={editInitCoverImage} alt="Cover preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -378,6 +378,10 @@ class InMemoryDatabase {
     return this.profiles.find((p) => p.id === id) || null;
   }
 
+  getProfileByClerkId(clerkId: string): ProfileRow | null {
+    return this.profiles.find((p) => p.clerk_id === clerkId) || null;
+  }
+
   getProfileByEmail(email: string): ProfileRow | null {
     return this.profiles.find((p) => p.email.toLowerCase() === email.toLowerCase()) || null;
   }
@@ -395,6 +399,7 @@ class InMemoryDatabase {
     }
     const newProfile: ProfileRow = {
       id,
+      clerk_id: updates.clerk_id ?? null,
       email: updates.email || `${id}@citizen.gh`,
       full_name: updates.full_name || "New Citizen",
       phone: updates.phone ?? null,
@@ -416,6 +421,7 @@ class InMemoryDatabase {
     const now = new Date().toISOString();
     const newProfile: ProfileRow = {
       id: profile.id,
+      clerk_id: profile.clerk_id ?? null,
       email: profile.email,
       full_name: profile.full_name || "New Citizen",
       phone: profile.phone ?? null,
@@ -752,6 +758,19 @@ export const DataProvider = {
       }
     }
     return getMemoryDb().getProfileByEmail(email);
+  },
+
+  async getProfileByClerkId(clerkId: string): Promise<ProfileRow | null> {
+    if (isLiveSupabaseAvailable()) {
+      try {
+        const supabase = createAdminClient();
+        const { data, error } = await supabase.from("profiles").select("*").eq("clerk_id", clerkId).maybeSingle();
+        if (!error && data) return data as ProfileRow;
+      } catch {
+        // Fall back to memory DB
+      }
+    }
+    return getMemoryDb().getProfileByClerkId(clerkId);
   },
 
   async updateProfile(id: string, updates: ProfileUpdate): Promise<ProfileRow> {

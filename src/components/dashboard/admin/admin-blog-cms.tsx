@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Plus, X, Eye, CheckCircle2, Globe, FileEdit, Tag, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Plus, X, Eye, CheckCircle2, Globe, FileEdit, Tag, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
 import {
   getEditorialPosts,
   togglePostPublished,
@@ -30,6 +30,7 @@ export function AdminBlogCms({
   const [excerpt, setExcerpt] = useState("");
   const [category, setCategory] = useState("Community Updates");
   const [tagsInput, setTagsInput] = useState("Civic Action, South Tongu");
+  const [coverImage, setCoverImage] = useState("");
   const [published, setPublished] = useState(true);
 
   // Edit post form state
@@ -37,6 +38,7 @@ export function AdminBlogCms({
   const [editExcerpt, setEditExcerpt] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editTagsInput, setEditTagsInput] = useState("");
+  const [editCoverImage, setEditCoverImage] = useState("");
   const [editPublished, setEditPublished] = useState(true);
 
   const handleToggle = (id: string) => {
@@ -67,6 +69,7 @@ export function AdminBlogCms({
         excerpt,
         category,
         tags,
+        coverImage: coverImage.trim() || undefined,
         published,
       },
       coordinatorName
@@ -76,6 +79,7 @@ export function AdminBlogCms({
     setIsCreateOpen(false);
     setTitle("");
     setExcerpt("");
+    setCoverImage("");
     onNotify(`Created new article: "${title}"`);
   };
 
@@ -85,6 +89,7 @@ export function AdminBlogCms({
     setEditExcerpt(post.excerpt);
     setEditCategory(post.category);
     setEditTagsInput(post.tags.join(", "));
+    setEditCoverImage(post.coverImage || "");
     setEditPublished(post.published);
   };
 
@@ -104,6 +109,7 @@ export function AdminBlogCms({
         excerpt: editExcerpt,
         category: editCategory,
         tags,
+        coverImage: editCoverImage.trim() || undefined,
         published: editPublished,
       },
       coordinatorName
@@ -173,8 +179,22 @@ export function AdminBlogCms({
                 posts.map((p) => (
                   <tr key={p.id} className="transition hover:bg-ocean-50/50 dark:hover:bg-ocean-900/30">
                     <td className="px-4 py-3.5 max-w-sm">
-                      <div className="font-bold text-ocean-950 dark:text-white line-clamp-1">{p.title}</div>
-                      <div className="text-[11px] text-ocean-500 line-clamp-1">{p.excerpt}</div>
+                      <div className="flex items-center gap-2.5">
+                        {p.coverImage ? (
+                          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-ocean-200 dark:border-ocean-800 bg-ocean-100 dark:bg-ocean-900">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.coverImage} alt={p.title} className="h-full w-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-dashed border-ocean-200 bg-ocean-50 text-ocean-400 dark:border-ocean-800 dark:bg-ocean-900/40">
+                            <ImageIcon className="h-4 w-4" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="font-bold text-ocean-950 dark:text-white line-clamp-1">{p.title}</div>
+                          <div className="text-[11px] text-ocean-500 line-clamp-1">{p.excerpt}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-ocean-700 dark:text-ocean-300 font-medium">
                       {p.category}
@@ -315,6 +335,30 @@ export function AdminBlogCms({
                 />
               </div>
 
+              <div>
+                <label className="block font-semibold text-ocean-700 dark:text-ocean-300 mb-1">
+                  Cover Image URL (Optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. /uploads/health-outreach.jpg or /images/..."
+                    value={coverImage}
+                    onChange={(e) => setCoverImage(e.target.value)}
+                    className="flex-1 rounded-lg border border-ocean-200 bg-white p-2 text-ocean-900 focus:border-amber-500 focus:outline-none dark:border-ocean-700 dark:bg-ocean-900 dark:text-white"
+                  />
+                  {coverImage && (
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-ocean-200 dark:border-ocean-700">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={coverImage} alt="Cover preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1 text-[11px] text-ocean-500">
+                  Tip: Upload an image in the Media &amp; Gallery tab and copy its URL here.
+                </p>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -423,6 +467,30 @@ export function AdminBlogCms({
                   onChange={(e) => setEditExcerpt(e.target.value)}
                   className="w-full rounded-lg border border-ocean-200 bg-white p-2 text-ocean-900 focus:border-amber-500 focus:outline-none dark:border-ocean-700 dark:bg-ocean-900 dark:text-white"
                 />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-ocean-700 dark:text-ocean-300 mb-1">
+                  Cover Image URL (Optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. /uploads/health-outreach.jpg or /images/..."
+                    value={editCoverImage}
+                    onChange={(e) => setEditCoverImage(e.target.value)}
+                    className="flex-1 rounded-lg border border-ocean-200 bg-white p-2 text-ocean-900 focus:border-amber-500 focus:outline-none dark:border-ocean-700 dark:bg-ocean-900 dark:text-white"
+                  />
+                  {editCoverImage && (
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-ocean-200 dark:border-ocean-700">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={editCoverImage} alt="Cover preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1 text-[11px] text-ocean-500">
+                  Tip: Upload an image in the Media &amp; Gallery tab and copy its URL here.
+                </p>
               </div>
 
               <div className="flex items-center gap-2 pt-1">

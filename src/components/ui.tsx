@@ -102,15 +102,16 @@ export function SectionHeading({
   return (
     <div className={cn("max-w-2xl", align === "center" && "mx-auto text-center")}>
       {eyebrow && (
-        <p className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-ocean-600 dark:text-ocean-400">
-          {eyebrow}
-        </p>
+        <div className={cn("inline-flex items-center gap-1.5 text-xs font-semibold text-ocean-700 dark:text-gold-400", align === "center" && "justify-center")}>
+          <span className="h-1.5 w-1.5 rounded-full bg-gold-500" />
+          <span>{eyebrow}</span>
+        </div>
       )}
-      <h2 className="mt-2 text-balance text-3xl font-semibold text-ocean-950 dark:text-white sm:text-4xl">
+      <h2 className="mt-2 text-balance text-2xl font-semibold text-ocean-950 dark:text-white sm:text-3xl lg:text-4xl">
         {title}
       </h2>
       {description && (
-        <p className="mt-3 text-balance text-ocean-600 dark:text-ocean-300">{description}</p>
+        <p className="mt-3 text-balance text-sm sm:text-base text-ocean-600 dark:text-ocean-300 leading-relaxed">{description}</p>
       )}
     </div>
   );
@@ -137,7 +138,7 @@ export function StatCounter({ value, label, suffix = "" }: { value: number; labe
 
   return (
     <div ref={ref}>
-      <p className="font-mono text-4xl font-medium text-white sm:text-5xl">
+      <p className="font-mono text-4xl font-medium text-white sm:text-5xl tabular-nums">
         {display.toLocaleString()}
         {suffix}
       </p>

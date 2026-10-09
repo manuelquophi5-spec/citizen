@@ -75,9 +75,6 @@ export function setSession(session: Omit<LocalSession, "loggedInAt"> & { role?: 
       userId: session.userId,
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
-    try {
-      document.cookie = `tcp_session=${encodeURIComponent(JSON.stringify(full))}; path=/; max-age=604800; SameSite=Lax`;
-    } catch {}
     window.dispatchEvent(new CustomEvent(SESSION_CHANGED_EVENT, { detail: full }));
   } catch {
     // localStorage unavailable — the dummy flow just won't persist across reloads.

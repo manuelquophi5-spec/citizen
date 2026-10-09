@@ -32,6 +32,7 @@ export default async function InitiativeDetailPage({ params }: { params: { slug:
   const description = live?.description || mock?.description || "";
   const status = live?.status || mock?.status || "ACTIVE";
   const location = live?.location || mock?.location || "South Tongu District";
+  const coverImage = live?.cover_image || (mock as any)?.coverImage || null;
   const raised = live ? live.raised_amount : (mock?.amountRaised ?? 0);
   const budget = live ? live.target_amount : (mock?.budget ?? 0);
   const sdgTags = mock?.sdgTags || [];
@@ -47,8 +48,14 @@ export default async function InitiativeDetailPage({ params }: { params: { slug:
 
   return (
     <article>
-      <section className="bg-gradient-to-br from-ocean-800 to-ocean-950 py-16 text-white">
-        <div className="container-page">
+      <section className="relative overflow-hidden bg-gradient-to-br from-ocean-800 to-ocean-950 py-16 text-white">
+        {coverImage && (
+          <div className="absolute inset-0 opacity-15 pointer-events-none">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverImage} alt={title} className="h-full w-full object-cover" />
+          </div>
+        )}
+        <div className="container-page relative z-10">
           <div className="flex flex-wrap gap-1.5">
             <Badge tone={status === "ACTIVE" ? "leaf" : "ocean"}>{labelize(status)}</Badge>
             {sdgTags.map((s) => <Badge key={s} tone="gold">{s}</Badge>)}
@@ -64,6 +71,12 @@ export default async function InitiativeDetailPage({ params }: { params: { slug:
       <section className="section-y">
         <div className="container-page grid gap-10 lg:grid-cols-3">
           <div className="space-y-8 lg:col-span-2">
+            {coverImage && (
+              <div className="overflow-hidden rounded-2xl border border-ocean-200 dark:border-ocean-800 shadow-sm bg-ocean-100 dark:bg-ocean-900">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverImage} alt={title} className="w-full max-h-[380px] object-cover" />
+              </div>
+            )}
             <div>
               <h2 className="font-display text-xl font-semibold text-ocean-950 dark:text-white">About this initiative</h2>
               <p className="mt-3 whitespace-pre-line text-ocean-700 dark:text-ocean-300">{description}</p>
@@ -109,22 +122,27 @@ export default async function InitiativeDetailPage({ params }: { params: { slug:
 
           <div className="space-y-5">
             <Card className="p-6">
-              <div className="flex justify-between text-sm font-mono text-ocean-600 dark:text-ocean-400">
-                <span>{formatGHS(raised)} raised</span>
-                <span>{percent(raised, budget)}%</span>
+              <div className="flex items-center justify-between">
+                <Badge tone="gold">Coming soon…</Badge>
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                  In Preparation
+                </span>
               </div>
-              <div className="mt-2"><ProgressBar value={percent(raised, budget)} /></div>
-              <p className="mt-1 text-xs text-ocean-600 dark:text-ocean-400">Target: {formatGHS(budget)}</p>
 
-              {progressLabel && (
-                <p className="mt-3 rounded-lg bg-ocean-50 px-3 py-2 font-mono text-xs text-ocean-700 dark:bg-ocean-800 dark:text-ocean-200">
-                  {progressLabel}
+              <div className="mt-4 rounded-xl border border-ocean-100 bg-ocean-50/70 p-4 dark:border-ocean-800 dark:bg-ocean-900/40">
+                <p className="text-xs font-medium text-ocean-700 dark:text-ocean-300">
+                  This initiative is actively being planned with community leaders in South Tongu. Direct crowdfunding and volunteer shifts will open upon official rollout.
                 </p>
-              )}
+                <div className="mt-3 flex items-center justify-between text-xs font-mono text-ocean-600 dark:text-ocean-400">
+                  <span>Project Budget Target:</span>
+                  <span className="font-semibold text-ocean-950 dark:text-white">{formatGHS(budget)}</span>
+                </div>
+              </div>
 
-              <div className="mt-5 flex flex-col gap-2">
-                <Button href={`/donate?initiative=${id}`} className="w-full">Donate to this initiative</Button>
-                <Button href="/volunteer" variant="secondary" className="w-full">Volunteer for this initiative</Button>
+              <div className="mt-5 flex flex-col gap-2.5">
+                <Button href="/donate" className="w-full">Support South Tongu Community Fund</Button>
+                <Button href="/register?role=volunteer" variant="secondary" className="w-full">Pre-register as Volunteer</Button>
               </div>
 
               <div className="mt-5 border-t border-ocean-100 pt-4 dark:border-ocean-800">

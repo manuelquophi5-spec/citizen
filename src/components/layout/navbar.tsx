@@ -64,8 +64,7 @@ export function Navbar() {
     pathname?.startsWith("/admin") ||
     pathname === "/user" ||
     pathname?.startsWith("/user/dashboard") ||
-    pathname === "/volunteer" ||
-    pathname?.startsWith("/volunteer/dashboard")
+    (pathname?.startsWith("/volunteer") && session?.role === "volunteer")
   ) {
     return null;
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DataProvider } from "@/lib/data-provider";
+import { getServerSession } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
@@ -27,6 +28,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: "user_id and project_name are required." },
         { status: 400 }
+      );
+    }
+
+    const session = await getServerSession();
+    if (session && session.userId !== body.user_id && session.role !== "admin") {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: Cannot cast vote on behalf of another user." },
+        { status: 403 }
       );
     }
 

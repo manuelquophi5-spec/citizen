@@ -40,7 +40,7 @@ import {
   Send,
 } from "lucide-react";
 import type { LocalSession } from "@/lib/local-session";
-import { clearSession, setSession, getSession } from "@/lib/local-session";
+import { clearSession, setSession, getSession, switchRole } from "@/lib/local-session";
 import { toast, toastCreated } from "@/components/ui/toast";
 import { signOutAction } from "@/app/actions/auth";
 import { initiatives, events } from "@/lib/mock-data";
@@ -903,6 +903,15 @@ export function VolunteerDashboard({ session: initialSession }: { session: Local
           </div>
 
           <div className="mt-2 space-y-1">
+            <Link
+              href="/user"
+              onClick={() => switchRole("user")}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-950/60 transition"
+              title="Switch to Citizen Portal"
+            >
+              <Heart className="h-3.5 w-3.5" />
+              {sidebarOpen && <span>Switch to Citizen Portal</span>}
+            </Link>
             <Link
               href="/"
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ocean-600 hover:bg-ocean-100 hover:text-ocean-900 dark:text-ocean-400 dark:hover:bg-ocean-800 dark:hover:text-ocean-200"

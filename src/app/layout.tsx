@@ -4,6 +4,7 @@ import { Providers } from "./providers";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
+import { ClerkAuthProvider } from "@/components/auth/clerk-auth-provider";
 import { getSiteUrl } from "@/lib/site-url";
 
 const siteUrl = getSiteUrl();
@@ -29,20 +30,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased">
-        <Providers>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-ocean-900 focus:shadow-lg"
-          >
-            Skip to content
-          </a>
-          <Navbar />
-          <main id="main-content">{children}</main>
-          <Footer />
-        </Providers>
-      </body>
-    </html>
+    <ClerkAuthProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className="font-sans antialiased">
+          <Providers>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-ocean-900 focus:shadow-lg"
+            >
+              Skip to content
+            </a>
+            <Navbar />
+            <main id="main-content">{children}</main>
+            <Footer />
+          </Providers>
+        </body>
+      </html>
+    </ClerkAuthProvider>
   );
 }

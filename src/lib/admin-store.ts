@@ -758,6 +758,7 @@ export interface EditorialPostEntry {
   published: boolean;
   publishedAt: string;
   views: number;
+  coverImage?: string;
 }
 
 export function getEditorialPosts(): EditorialPostEntry[] {

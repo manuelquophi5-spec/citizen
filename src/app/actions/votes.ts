@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { DataProvider } from "@/lib/data-provider";
+import { getCurrentUserWithRole } from "@/lib/rbac";
 import type { ActionResult, PriorityVoteInsert, PriorityVoteRow } from "@/types/database";
 
 export async function castPriorityVoteAction(
@@ -13,6 +14,11 @@ export async function castPriorityVoteAction(
     }
     if (!input.project_name || input.project_name.trim().length === 0) {
       return { success: false, error: "Project name is required." };
+    }
+
+    const user = await getCurrentUserWithRole();
+    if (user && user.userId !== input.user_id && user.role !== "admin") {
+      return { success: false, error: "Forbidden: Cannot cast vote on behalf of another user." };
     }
 
     const vote = await DataProvider.castPriorityVote({
@@ -56,6 +62,11 @@ export async function deletePriorityVoteAction(id: string): Promise<ActionResult
   try {
     if (!id) {
       return { success: false, error: "Vote ID is required." };
+    }
+
+    const user = await getCurrentUserWithRole();
+    if (!user) {
+      return { success: false, error: "Unauthorized: Authentication required." };
     }
 
     const success = await DataProvider.deletePriorityVote(id);

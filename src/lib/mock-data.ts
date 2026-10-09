@@ -65,6 +65,7 @@ export interface BlogPost {
   tags: string[];
   published: boolean;
   publishedAt: Date;
+  coverImage?: string;
 }
 
 export interface Donation {

@@ -40,8 +40,9 @@ import {
   Shield,
   Layers,
   Sparkles,
+  Award,
 } from "lucide-react";
-import { clearSession, setSession, getSession, type LocalSession } from "@/lib/local-session";
+import { clearSession, setSession, getSession, switchRole, type LocalSession } from "@/lib/local-session";
 import { toast, toastCreated } from "@/components/ui/toast";
 import { signOutAction } from "@/app/actions/auth";
 import { initiatives, getInitiativeBySlug, type SurveyReport, type PriorityLevel, type UrgencyLevel, type SurveyStatus } from "@/lib/mock-data";
@@ -790,6 +791,15 @@ export function UserDashboard({
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-ocean-200/80 dark:border-ocean-800 space-y-1">
           <Link
+            href="/volunteer"
+            onClick={() => switchRole("volunteer")}
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 transition"
+            title="Switch to Volunteer Console"
+          >
+            <Award className="h-4 w-4" />
+            {sidebarOpen && <span>Volunteer Console</span>}
+          </Link>
+          <Link
             href="/"
             className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-ocean-600 hover:bg-ocean-100 hover:text-ocean-950 dark:text-ocean-400 dark:hover:bg-ocean-900 dark:hover:text-white"
           >
@@ -896,7 +906,7 @@ export function UserDashboard({
               <FilamentStatsOverview stats={citizenStats} />
 
               {/* Quick Action Shortcuts Banner */}
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div
                   onClick={() => setNewReportModalOpen(true)}
                   className="cursor-pointer rounded-2xl border border-amber-200 bg-amber-50/50 p-5 transition hover:shadow-md dark:border-amber-900/40 dark:bg-amber-950/20"
@@ -950,6 +960,25 @@ export function UserDashboard({
                     Cast your resident ballot for 2026 priority infrastructure.
                   </p>
                 </div>
+
+                <Link
+                  href="/volunteer"
+                  onClick={() => switchRole("volunteer")}
+                  className="cursor-pointer rounded-2xl border border-teal-200 bg-teal-50/50 p-5 transition hover:shadow-md dark:border-teal-900/40 dark:bg-teal-950/20 block"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-600 text-white">
+                      <Award className="h-5 w-5" />
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-teal-600" />
+                  </div>
+                  <h3 className="mt-3 font-display text-sm font-bold text-ocean-950 dark:text-white">
+                    Volunteer Ambassador Console
+                  </h3>
+                  <p className="mt-1 text-xs text-ocean-600 dark:text-ocean-400">
+                    Log service hours, join community cleanups, and earn certificates.
+                  </p>
+                </Link>
               </div>
 
               {/* Recent Civic Issues preview & Watchlist preview */}

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { DataProvider } from "@/lib/data-provider";
+import { getCurrentUserWithRole } from "@/lib/rbac";
 import type {
   ActionResult,
   ReportInsert,
@@ -76,6 +77,14 @@ export async function updateReportStatusAction(
       return { success: false, error: "Report ID is required." };
     }
 
+    const user = await getCurrentUserWithRole();
+    if (!user || user.role !== "admin") {
+      return {
+        success: false,
+        error: "Unauthorized: Official Administrator privileges required to update civic report status.",
+      };
+    }
+
     const updates: ReportUpdate = { status };
     if (adminNotes !== undefined) updates.admin_notes = adminNotes;
     if (officialFeedback !== undefined) updates.official_feedback = officialFeedback;
@@ -99,6 +108,28 @@ export async function deleteReportAction(id: string): Promise<ActionResult<boole
   try {
     if (!id) {
       return { success: false, error: "Report ID is required." };
+    }
+
+    const user = await getCurrentUserWithRole();
+    if (!user) {
+      return {
+        success: false,
+        error: "Unauthorized: Authentication required to delete civic reports.",
+      };
+    }
+
+    if (user.role !== "admin") {
+      const reports = await DataProvider.getReports();
+      const report = reports.find((r) => r.id === id);
+      if (!report) {
+        return { success: false, error: "Report not found." };
+      }
+      if (report.user_id !== user.userId) {
+        return { success: false, error: "Forbidden: Cannot delete other citizens' reports." };
+      }
+      if (report.status !== "SUBMITTED") {
+        return { success: false, error: "Cannot delete report once under official review." };
+      }
     }
 
     const deleted = await DataProvider.deleteReport(id);

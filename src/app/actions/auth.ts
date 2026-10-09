@@ -5,16 +5,15 @@ import { cookies } from "next/headers";
 import { DataProvider } from "@/lib/data-provider";
 import type { ActionResult, ProfileRow, UserRole } from "@/types/database";
 
-export interface SessionData {
-  userId: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  electoralArea?: string | null;
-  skills?: string[] | null;
-}
+import {
+  SESSION_COOKIE_NAME,
+  signSessionToken,
+  getServerSession,
+  type SessionData,
+} from "@/lib/auth";
+import { getCurrentUserWithRole } from "@/lib/rbac";
 
-import { SESSION_COOKIE_NAME } from "@/lib/auth";
+export type { SessionData };
 
 // Supported administrator authentication PINs
 const VALID_ADMIN_PINS = [
@@ -39,10 +38,11 @@ function verifyAdminPin(pin?: string): boolean {
   return VALID_ADMIN_PINS.includes(normalized);
 }
 
-function setSessionCookie(session: SessionData) {
+async function setSessionCookie(session: SessionData) {
   try {
-    cookies().set(SESSION_COOKIE_NAME, JSON.stringify(session), {
-      httpOnly: false,
+    const token = await signSessionToken(session);
+    cookies().set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
@@ -111,6 +111,12 @@ export async function signInAction(payload: {
         electoral_area: "Sogakope Central",
         skills: resolvedRole === "volunteer" ? ["Civic Mobilization", "Community Cleanup"] : [],
       });
+    } else if (payload.role === "volunteer" && profile.role !== "admin") {
+      // Allow existing citizen to activate volunteer persona
+      const updated = await DataProvider.updateProfile(profile.id, {
+        role: "volunteer",
+      });
+      if (updated) profile = updated;
     }
 
     const session: SessionData = {
@@ -122,7 +128,7 @@ export async function signInAction(payload: {
       skills: profile.skills,
     };
 
-    setSessionCookie(session);
+    await setSessionCookie(session);
 
     revalidatePath("/admin");
     revalidatePath("/user");
@@ -167,6 +173,26 @@ export async function signUpAction(payload: {
     const profiles = await DataProvider.getAllProfiles();
     const existing = profiles.find((p) => p.email.toLowerCase() === email);
     if (existing) {
+      // If user registered as citizen earlier and now joins as volunteer, upgrade them
+      if (resolvedRole === "volunteer" && existing.role !== "admin") {
+        const updated = await DataProvider.updateProfile(existing.id, {
+          role: "volunteer",
+          skills: payload.skills && payload.skills.length > 0 ? payload.skills : existing.skills,
+          electoral_area: payload.electoralArea || existing.electoral_area,
+        });
+        const session: SessionData = {
+          userId: existing.id,
+          name: updated?.full_name || existing.full_name,
+          email: existing.email,
+          role: "volunteer",
+          electoralArea: updated?.electoral_area || existing.electoral_area,
+          skills: updated?.skills || existing.skills,
+        };
+        await setSessionCookie(session);
+        revalidatePath("/volunteer");
+        revalidatePath("/user");
+        return { success: true, data: session };
+      }
       return { success: false, error: "An account with this email already exists." };
     }
 
@@ -189,7 +215,7 @@ export async function signUpAction(payload: {
       skills: profile.skills,
     };
 
-    setSessionCookie(session);
+    await setSessionCookie(session);
 
     revalidatePath("/admin");
     revalidatePath("/user");
@@ -217,10 +243,19 @@ export async function signOutAction(): Promise<ActionResult<boolean>> {
 
 export async function getSessionAction(): Promise<ActionResult<SessionData | null>> {
   try {
-    const raw = cookies().get(SESSION_COOKIE_NAME)?.value;
-    if (!raw) return { success: true, data: null };
-    const session = JSON.parse(raw) as SessionData;
-    return { success: true, data: session };
+    const authUser = await getCurrentUserWithRole();
+    if (authUser) {
+      const sessionData: SessionData = {
+        userId: authUser.userId,
+        name: authUser.fullName,
+        email: authUser.email,
+        role: authUser.role,
+        electoralArea: authUser.profile?.electoral_area,
+        skills: authUser.profile?.skills,
+      };
+      return { success: true, data: sessionData };
+    }
+    return { success: true, data: null };
   } catch {
     return { success: true, data: null };
   }

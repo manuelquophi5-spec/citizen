@@ -39,6 +39,8 @@ yarn-error.log*
 agent/
 *.agent
 agent*
+.claude/
+skills-lock.json
 .gemini/
 .antigravity/
 .system_generated/
@@ -56,3 +58,9 @@ brain/
 # OS files
 .DS_Store
 Thumbs.db
+*.deb
+chrome-bin/
+
+# User Uploads
+public/uploads/*
+!public/uploads/.gitkeep

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, Eye, Download, Calendar, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui";
@@ -35,19 +35,37 @@ export function MediaGalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
 
   const activePhoto = activePhotoIndex !== null ? filteredPhotos[activePhotoIndex] : null;
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePrev = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (activePhotoIndex !== null) {
-      setActivePhotoIndex(activePhotoIndex > 0 ? activePhotoIndex - 1 : filteredPhotos.length - 1);
+      setActivePhotoIndex((prev) => (prev !== null ? (prev > 0 ? prev - 1 : filteredPhotos.length - 1) : null));
     }
-  };
+  }, [activePhotoIndex, filteredPhotos.length]);
 
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleNext = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (activePhotoIndex !== null) {
-      setActivePhotoIndex(activePhotoIndex < filteredPhotos.length - 1 ? activePhotoIndex + 1 : 0);
+      setActivePhotoIndex((prev) => (prev !== null ? (prev < filteredPhotos.length - 1 ? prev + 1 : 0) : null));
     }
-  };
+  }, [activePhotoIndex, filteredPhotos.length]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (activePhotoIndex === null) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActivePhotoIndex(null);
+      } else if (e.key === "ArrowLeft") {
+        handlePrev();
+      } else if (e.key === "ArrowRight") {
+        handleNext();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activePhotoIndex, handleNext, handlePrev]);
 
   return (
     <div>
@@ -75,10 +93,12 @@ export function MediaGalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
       {/* Responsive Photo Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {filteredPhotos.map((photo, idx) => (
-          <div
+          <button
             key={photo.id}
+            type="button"
             onClick={() => setActivePhotoIndex(idx)}
-            className="group relative aspect-4/3 cursor-pointer overflow-hidden rounded-xl bg-ocean-100 shadow-xs transition hover:-translate-y-1 hover:shadow-md dark:bg-ocean-900"
+            className="group relative aspect-[4/3] w-full text-left cursor-pointer overflow-hidden rounded-xl bg-ocean-100 shadow-xs transition hover:-translate-y-1 hover:shadow-md focus-visible:ring-2 focus-visible:ring-gold-500 dark:bg-ocean-900"
+            aria-label={`View ${photo.title}`}
           >
             <Image
               src={photo.thumbnail}
@@ -98,7 +118,7 @@ export function MediaGalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
                 <Eye className="h-3 w-3" /> Click to enlarge
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -111,6 +131,9 @@ export function MediaGalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
       {/* Lightbox Modal */}
       {activePhoto && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={activePhoto.title}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-xs animate-in fade-in"
           onClick={() => setActivePhotoIndex(null)}
         >
@@ -118,8 +141,8 @@ export function MediaGalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
           <button
             type="button"
             onClick={() => setActivePhotoIndex(null)}
-            className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/40 transition"
-            title="Close"
+            className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/40 transition focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Close photo preview"
           >
             <X className="h-6 w-6" />
           </button>
@@ -128,23 +151,23 @@ export function MediaGalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
           <button
             type="button"
             onClick={handlePrev}
-            className="absolute left-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/40 transition"
-            title="Previous Photo"
+            className="absolute left-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/40 transition focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Previous photo"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/40 transition"
-            title="Next Photo"
+            className="absolute right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/40 transition focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Next photo"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
 
           {/* Main Image Container */}
           <div
-            className="relative flex flex-col items-center max-h-[90vh] max-w-5xl overflow-hidden rounded-2xl bg-ocean-950 p-2"
+            className="relative flex flex-col items-center max-h-[90vh] max-w-5xl overflow-hidden rounded-2xl bg-ocean-950 p-2 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative h-[65vh] w-[85vw] max-w-4xl">

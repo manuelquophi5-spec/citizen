@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DataProvider } from "@/lib/data-provider";
+import { getServerSession } from "@/lib/auth";
 import type { VolunteerHourStatus } from "@/types/database";
 
 export async function GET(request: Request) {
@@ -23,6 +24,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: "volunteer_id, activity, and hours are required." },
         { status: 400 }
+      );
+    }
+
+    const session = await getServerSession();
+    if (session && session.role === "volunteer" && session.userId !== body.volunteer_id) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: Cannot log volunteer hours for another account." },
+        { status: 403 }
       );
     }
 

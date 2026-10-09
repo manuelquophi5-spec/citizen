@@ -33,6 +33,7 @@ export interface ActionResult<T = unknown> {
 // ----------------------------------------------------------------------------
 export type ProfileRow = {
   id: string;
+  clerk_id?: string | null;
   email: string;
   full_name: string;
   phone: string | null;
@@ -45,6 +46,7 @@ export type ProfileRow = {
 
 export type ProfileInsert = {
   id: string;
+  clerk_id?: string | null;
   email: string;
   full_name?: string;
   phone?: string | null;
@@ -57,6 +59,7 @@ export type ProfileInsert = {
 
 export type ProfileUpdate = {
   id?: string;
+  clerk_id?: string | null;
   email?: string;
   full_name?: string;
   phone?: string | null;

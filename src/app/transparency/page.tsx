@@ -3,13 +3,31 @@ import Image from "next/image";
 import Link from "next/link";
 import { DataProvider } from "@/lib/data-provider";
 import { SectionHeading, Card } from "@/components/ui";
-import { FundAllocationChart } from "@/components/charts/fund-allocation-chart";
-import { DonationsTrendChart } from "@/components/charts/donations-trend-chart";
+import dynamic from "next/dynamic";
 import { formatGHS } from "@/lib/utils";
 import { format } from "date-fns";
 import { FEATURED_OUTREACH_PHOTOS } from "@/lib/gallery-data";
 
-export const metadata: Metadata = { title: "Transparency Dashboard" };
+const FundAllocationChart = dynamic(
+  () => import("@/components/charts/fund-allocation-chart").then((m) => m.FundAllocationChart),
+  {
+    ssr: false,
+    loading: () => <div className="h-[280px] w-full animate-pulse rounded-xl bg-ocean-50 dark:bg-ocean-800/40" />,
+  }
+);
+
+const DonationsTrendChart = dynamic(
+  () => import("@/components/charts/donations-trend-chart").then((m) => m.DonationsTrendChart),
+  {
+    ssr: false,
+    loading: () => <div className="h-[280px] w-full animate-pulse rounded-xl bg-ocean-50 dark:bg-ocean-800/40" />,
+  }
+);
+
+export const metadata: Metadata = {
+  title: "Transparency Dashboard · The Citizen Project",
+  description: "Direct financial and operational transparency for all community development funds deployed across South Tongu District.",
+};
 
 export default async function TransparencyPage() {
   const [donations, initiatives] = await Promise.all([
@@ -75,7 +93,7 @@ export default async function TransparencyPage() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <Card key={k.label} className="p-5">
-              <p className="font-mono text-2xl font-semibold text-ocean-950 dark:text-white">{k.value}</p>
+              <p className="font-mono text-2xl font-semibold text-ocean-950 dark:text-white tabular-nums">{k.value}</p>
               <p className="mt-1 text-sm text-ocean-600 dark:text-ocean-400">{k.label}</p>
             </Card>
           ))}
@@ -122,7 +140,7 @@ export default async function TransparencyPage() {
             </div>
             <Link
               href="/gallery"
-              className="inline-flex items-center text-xs font-semibold text-kente-gold hover:underline"
+              className="inline-flex items-center text-xs font-semibold text-gold-600 hover:underline dark:text-gold-400"
             >
               Browse full 64-photo media archive &rarr;
             </Link>

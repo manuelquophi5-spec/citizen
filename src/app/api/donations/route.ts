@@ -8,7 +8,14 @@ export async function GET(request: Request) {
     const initiativeId = searchParams.get("initiativeId") || undefined;
 
     const donations = await DataProvider.getDonations({ userId, initiativeId });
-    return NextResponse.json({ success: true, data: donations });
+    return NextResponse.json(
+      { success: true, data: donations },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to fetch donations";
     return NextResponse.json({ success: false, error: message }, { status: 500 });

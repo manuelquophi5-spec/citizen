@@ -30,15 +30,22 @@ const social = [
   { icon: MessageCircle, href: "#", label: "WhatsApp" },
 ];
 
+import { getSession, type LocalSession } from "@/lib/local-session";
+import { useEffect, useState } from "react";
+
 export function Footer() {
   const pathname = usePathname();
+  const [session, setSession] = useState<LocalSession | null>(null);
+
+  useEffect(() => {
+    setSession(getSession());
+  }, [pathname]);
 
   if (
     pathname?.startsWith("/admin") ||
     pathname === "/user" ||
     pathname?.startsWith("/user/dashboard") ||
-    pathname === "/volunteer" ||
-    pathname?.startsWith("/volunteer/dashboard")
+    (pathname?.startsWith("/volunteer") && session?.role === "volunteer")
   ) {
     return null;
   }

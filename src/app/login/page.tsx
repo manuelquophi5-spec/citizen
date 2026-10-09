@@ -171,6 +171,35 @@ function LoginForm() {
           </div>
         )}
 
+        {/* Quick Fill Demo Credentials */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-mono text-ocean-400">Quick Test:</span>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveRole("user");
+              setEmail("kofi@citizen.gh");
+              setPassword("citizen2026");
+              setError(null);
+            }}
+            className="rounded-lg border border-ocean-200 bg-ocean-50/70 px-2.5 py-1 text-[11px] font-medium text-ocean-700 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-800 dark:border-ocean-700 dark:bg-ocean-800 dark:text-ocean-300 dark:hover:bg-emerald-950/40 transition cursor-pointer"
+          >
+            Kofi (Citizen)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveRole("volunteer");
+              setEmail("akua.volunteer@citizen.gh");
+              setPassword("volunteer2026");
+              setError(null);
+            }}
+            className="rounded-lg border border-ocean-200 bg-ocean-50/70 px-2.5 py-1 text-[11px] font-medium text-ocean-700 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-800 dark:border-ocean-700 dark:bg-ocean-800 dark:text-ocean-300 dark:hover:bg-emerald-950/40 transition cursor-pointer"
+          >
+            Akua (Volunteer)
+          </button>
+        </div>
+
         <form onSubmit={handleFormLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-ocean-800 dark:text-ocean-200 mb-1.5">

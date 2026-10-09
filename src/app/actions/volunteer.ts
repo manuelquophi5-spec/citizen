@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { DataProvider } from "@/lib/data-provider";
+import { getCurrentUserWithRole } from "@/lib/rbac";
 import type {
   ActionResult,
   VolunteerHourInsert,
@@ -67,6 +68,25 @@ export async function updateVolunteerHoursAction(
       return { success: false, error: "Hour entry ID is required." };
     }
 
+    const user = await getCurrentUserWithRole();
+    if (!user) {
+      return { success: false, error: "Unauthorized: Authentication required." };
+    }
+
+    if (user.role !== "admin") {
+      const hours = await DataProvider.getVolunteerHours();
+      const entry = hours.find((h) => h.id === id);
+      if (!entry) {
+        return { success: false, error: "Volunteer hours record not found." };
+      }
+      if (entry.volunteer_id !== user.userId) {
+        return { success: false, error: "Forbidden: Cannot update another volunteer's record." };
+      }
+      if (entry.status === "VERIFIED") {
+        return { success: false, error: "Forbidden: Verified hours cannot be modified." };
+      }
+    }
+
     const updated = await DataProvider.updateVolunteerHourStatus(
       id,
       updates.status || "PENDING",
@@ -93,6 +113,22 @@ export async function voidVolunteerHoursAction(
       return { success: false, error: "Hour entry ID is required." };
     }
 
+    const user = await getCurrentUserWithRole();
+    if (!user) {
+      return { success: false, error: "Unauthorized: Authentication required." };
+    }
+
+    if (user.role !== "admin") {
+      const hours = await DataProvider.getVolunteerHours();
+      const entry = hours.find((h) => h.id === id);
+      if (!entry) {
+        return { success: false, error: "Volunteer hours record not found." };
+      }
+      if (entry.volunteer_id !== user.userId) {
+        return { success: false, error: "Forbidden: Cannot void another volunteer's record." };
+      }
+    }
+
     const updated = await DataProvider.voidVolunteerHours(id, reason);
 
     revalidatePath("/volunteer");
@@ -113,6 +149,14 @@ export async function verifyVolunteerHoursAction(
   try {
     if (!id) {
       return { success: false, error: "Hour entry ID is required." };
+    }
+
+    const user = await getCurrentUserWithRole();
+    if (!user || user.role !== "admin") {
+      return {
+        success: false,
+        error: "Unauthorized: Only official District Coordinators or Administrators can verify volunteer hours.",
+      };
     }
 
     const status: VolunteerHourStatus = approved ? "VERIFIED" : "VOIDED";
