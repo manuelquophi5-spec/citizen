@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, HandHeart, Megaphone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui";
@@ -44,21 +46,18 @@ export function Hero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.05 }}
-          className="mt-5 max-w-3xl text-balance text-4xl font-semibold leading-[1.08] text-white sm:text-6xl"
+          className="mt-5 max-w-4xl text-balance text-3xl font-semibold leading-[1.2] text-white sm:text-5xl lg:text-5xl"
         >
-          Empowering citizens.
-          <br />
-          <span className="text-gold-400">Transforming</span> communities.
+          The Citizen Project unites <span className="text-gold-400">young people</span> and <span className="text-ocean-300">institutions</span> across South Tongu in building a more responsible, sustainable, and civically engaged Ghana — <span className="italic font-normal">one community at a time.</span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="mt-5 max-w-xl text-balance text-lg text-ocean-200"
+          className="mt-6 max-w-2xl text-balance text-lg text-ocean-200"
         >
-          The Citizen Project unites young people, families, and institutions across South Tongu in building a
-          more responsible, sustainable, and civically engaged Ghana — one community at a time.
+          Empowering citizens, resolving grassroots social challenges, and building transparent community partnerships across South Tongu District.
         </motion.p>
 
         <motion.div
@@ -79,6 +78,54 @@ export function Hero() {
           <Button href="/about" size="lg" variant="ghost" className="!text-ocean-200 hover:!bg-white/10">
             Join Us <ArrowRight className="h-4 w-4" />
           </Button>
+        </motion.div>
+
+        {/* Recent Outreach Field Proof Strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35 }}
+          className="mt-12 flex flex-wrap items-center gap-4 border-t border-ocean-800/80 pt-8"
+        >
+          <div className="flex -space-x-3 overflow-hidden">
+            <Image
+              src="/images/outreach/IMG_9626.jpg"
+              alt="South Tongu Community Outreach"
+              width={44}
+              height={44}
+              className="inline-block h-11 w-11 rounded-full object-cover ring-2 ring-ocean-950"
+            />
+            <Image
+              src="/images/outreach/IMG_9633.jpg"
+              alt="South Tongu Community Outreach"
+              width={44}
+              height={44}
+              className="inline-block h-11 w-11 rounded-full object-cover ring-2 ring-ocean-950"
+            />
+            <Image
+              src="/images/outreach/IMG_9640.jpg"
+              alt="South Tongu Community Outreach"
+              width={44}
+              height={44}
+              className="inline-block h-11 w-11 rounded-full object-cover ring-2 ring-ocean-950"
+            />
+            <Image
+              src="/images/outreach/IMG_9650.jpg"
+              alt="South Tongu Community Outreach"
+              width={44}
+              height={44}
+              className="inline-block h-11 w-11 rounded-full object-cover ring-2 ring-ocean-950"
+            />
+          </div>
+          <div className="text-xs text-ocean-200">
+            <p className="font-semibold text-white">Recent Donation Handover Completed</p>
+            <p className="text-ocean-300">
+              GH₵ 2,000 deployed in local youth & community support ·{" "}
+              <Link href="/gallery" className="text-gold-400 font-semibold underline hover:text-gold-300">
+                View 64 field photos &rarr;
+              </Link>
+            </p>
+          </div>
         </motion.div>
       </div>
     </section>

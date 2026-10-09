@@ -2,6 +2,7 @@ import { Hero } from "@/components/home/hero";
 import {
   StatsBand,
   FeaturedInitiatives,
+  RecentOutreachShowcase,
   UpcomingEvents,
   TestimonialsSection,
   PartnersStrip,
@@ -55,7 +56,8 @@ async function getHomeData() {
   const uniqueVolunteersCount = new Set(liveVolunteerHours.map((h) => h.volunteer_id).filter(Boolean)).size;
   const volunteers = uniqueVolunteersCount > 0 ? uniqueVolunteersCount : 24;
 
-  const raised = liveDonations.reduce((sum, d) => sum + Number(d.amount), 0);
+  const liveSum = liveDonations.reduce((sum, d) => sum + Number(d.amount), 0);
+  const raised = Math.max(2000, liveSum);
   const communities = new Set(activeInitiatives.map((i: any) => i.location).filter(Boolean));
 
   return {
@@ -83,6 +85,7 @@ export default async function HomePage() {
         raised={raised}
       />
       <FeaturedInitiatives initiatives={initiatives} />
+      <RecentOutreachShowcase />
       {events.length > 0 && <UpcomingEvents events={events} />}
       {testimonials.length > 0 && <TestimonialsSection testimonials={testimonials} />}
       <PartnersStrip partners={partners} />
