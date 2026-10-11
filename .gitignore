@@ -64,3 +64,11 @@ chrome-bin/
 # User Uploads
 public/uploads/*
 !public/uploads/.gitkeep
+
+# Raw / unprocessed images (only processed images in public/images/outreach/ are tracked)
+raw_images/
+raw-images/
+public/images/*.jpg
+public/images/*.jpeg
+public/images/*.png
+!public/images/outreach/*

@@ -36,7 +36,7 @@ export default async function TransparencyPage() {
   ]);
 
   const activeCount = initiatives.filter((i) => i.status === "ACTIVE").length;
-  const totalRaised = Math.max(2000, donations.reduce((sum, d) => sum + Number(d.amount), 0));
+  const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 
   // Group fund allocation by initiative category
   const allocationMap = new Map<string, number>();

@@ -2,22 +2,42 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { submitContactAction } from "@/app/actions/contact";
 
 const inputClass =
   "w-full rounded-lg border border-ocean-200 px-3 py-2.5 text-sm focus:border-ocean-500 dark:border-ocean-700 dark:bg-ocean-900";
 
 export function ContactForm() {
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const result = await submitContactAction({
+      name: String(formData.get("name") || ""),
+      email: String(formData.get("email") || ""),
+      phone: String(formData.get("phone") || "") || null,
+      subject: String(formData.get("subject") || ""),
+      message: String(formData.get("message") || ""),
+    });
+
+    setLoading(false);
+    if (result.success) {
+      setSent(true);
+      (e.target as HTMLFormElement).reset();
+    } else {
+      setError(result.error || "Failed to submit message. Please try again.");
+    }
+  }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        setSent(true);
-      }}
-      className="space-y-4"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="contact-name" className="mb-1 block text-xs font-medium text-ocean-800 dark:text-ocean-200">
@@ -90,8 +110,25 @@ export function ContactForm() {
         />
       </div>
 
-      <Button type="submit" size="lg" className="w-full">
-        Send Message
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-xs text-red-700 dark:text-red-300"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <Button type="submit" size="lg" className="w-full" disabled={loading}>
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Sending Message...
+          </>
+        ) : (
+          "Send Message"
+        )}
       </Button>
 
       {sent && (

@@ -18,6 +18,15 @@ export async function logVolunteerHoursAction(
     if (!input.volunteer_id) {
       return { success: false, error: "Volunteer ID is required." };
     }
+
+    const user = await getCurrentUserWithRole();
+    if (!user) {
+      return { success: false, error: "Unauthorized: Authentication required to log volunteer hours." };
+    }
+    if (user.userId !== input.volunteer_id && user.role !== "admin") {
+      return { success: false, error: "Forbidden: Cannot log volunteer hours for another user." };
+    }
+
     if (!input.activity || input.activity.trim().length === 0) {
       return { success: false, error: "Activity description is required." };
     }

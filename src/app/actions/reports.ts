@@ -146,3 +146,50 @@ export async function deleteReportAction(id: string): Promise<ActionResult<boole
     return { success: false, error: message };
   }
 }
+
+export async function updateReportAction(
+  id: string,
+  updates: Partial<Pick<ReportUpdate, "title" | "description" | "category" | "priority" | "location" | "image_url">>
+): Promise<ActionResult<ReportRow>> {
+  try {
+    if (!id) {
+      return { success: false, error: "Report ID is required." };
+    }
+
+    const user = await getCurrentUserWithRole();
+    if (!user) {
+      return {
+        success: false,
+        error: "Unauthorized: Authentication required to edit civic reports.",
+      };
+    }
+
+    const reports = await DataProvider.getReports();
+    const existing = reports.find((r) => r.id === id);
+    if (!existing) {
+      return { success: false, error: "Report not found." };
+    }
+
+    if (user.role !== "admin") {
+      if (existing.user_id !== user.userId) {
+        return { success: false, error: "Forbidden: Cannot edit reports submitted by other citizens." };
+      }
+      if (existing.status !== "SUBMITTED") {
+        return { success: false, error: "Cannot edit reports once under official review or in progress." };
+      }
+    }
+
+    const updated = await DataProvider.updateReport(id, updates);
+
+    revalidatePath("/admin");
+    revalidatePath("/user");
+    revalidatePath("/community-map");
+    revalidatePath("/impact");
+    revalidatePath("/");
+
+    return { success: true, data: updated };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to update report.";
+    return { success: false, error: message };
+  }
+}

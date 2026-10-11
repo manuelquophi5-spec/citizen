@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS public.volunteer_hours (
 CREATE INDEX IF NOT EXISTS idx_volunteer_hours_volunteer_id ON public.volunteer_hours(volunteer_id);
 CREATE INDEX IF NOT EXISTS idx_volunteer_hours_status ON public.volunteer_hours(status);
 CREATE INDEX IF NOT EXISTS idx_volunteer_hours_date ON public.volunteer_hours(date DESC);
+CREATE INDEX IF NOT EXISTS idx_volunteer_hours_verified_by ON public.volunteer_hours(verified_by);
 
 -- ----------------------------------------------------------------------------
 -- 7. TABLE: priority_votes
@@ -179,17 +180,23 @@ CREATE INDEX IF NOT EXISTS idx_priority_votes_project_name ON public.priority_vo
 -- 8. HELPER FUNCTIONS & TRIGGERS
 -- ----------------------------------------------------------------------------
 
--- 8.1 Is Admin check function (SECURITY DEFINER to prevent recursive RLS)
-CREATE OR REPLACE FUNCTION public.is_admin()
+-- 8.1 Is Admin check function (SECURITY DEFINER in internal private schema to prevent recursive RLS and avoid exposing as public REST RPC)
+CREATE SCHEMA IF NOT EXISTS internal;
+
+CREATE OR REPLACE FUNCTION internal.is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role = 'admin'
+    WHERE id = (select auth.uid()) AND role = 'admin'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE
 SET search_path = public, pg_temp;
+
+REVOKE ALL ON SCHEMA internal FROM public, anon;
+GRANT USAGE ON SCHEMA internal TO authenticated;
+GRANT EXECUTE ON FUNCTION internal.is_admin() TO authenticated;
 
 -- 8.2 Updated_at auto-updater
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
@@ -301,8 +308,7 @@ END $$;
 -- 8.5 Security Hardening on Function Execution
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM public, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.handle_successful_donation() FROM public, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.is_admin() FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM public, anon, authenticated;
 
 -- ----------------------------------------------------------------------------
 -- 9. ROW LEVEL SECURITY (RLS) POLICIES
@@ -331,8 +337,8 @@ DO $$ BEGIN
     CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE
   TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id AND role = (SELECT role FROM public.profiles WHERE id = auth.uid()));
+  USING ((select auth.uid()) = id)
+  WITH CHECK ((select auth.uid()) = id AND role = (SELECT role FROM public.profiles WHERE id = (select auth.uid())));
   END IF;
 END $$;
 
@@ -341,7 +347,7 @@ DO $$ BEGIN
     CREATE POLICY "Admins have full access to profiles"
   ON public.profiles FOR ALL
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
@@ -360,7 +366,7 @@ DO $$ BEGIN
     CREATE POLICY "Admins can manage initiatives"
   ON public.initiatives FOR ALL
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
@@ -379,7 +385,7 @@ DO $$ BEGIN
     CREATE POLICY "Authenticated users can create reports"
   ON public.reports FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+  WITH CHECK ((select auth.uid()) = user_id OR user_id IS NULL);
   END IF;
 END $$;
 
@@ -397,8 +403,8 @@ DO $$ BEGIN
     CREATE POLICY "Users can update their own reports while SUBMITTED"
   ON public.reports FOR UPDATE
   TO authenticated
-  USING (auth.uid() = user_id AND status = 'SUBMITTED')
-  WITH CHECK (auth.uid() = user_id AND status = 'SUBMITTED');
+  USING ((select auth.uid()) = user_id AND status = 'SUBMITTED')
+  WITH CHECK ((select auth.uid()) = user_id AND status = 'SUBMITTED');
   END IF;
 END $$;
 
@@ -407,7 +413,7 @@ DO $$ BEGIN
     CREATE POLICY "Users can delete their own reports while SUBMITTED"
   ON public.reports FOR DELETE
   TO authenticated
-  USING (auth.uid() = user_id AND status = 'SUBMITTED');
+  USING ((select auth.uid()) = user_id AND status = 'SUBMITTED');
   END IF;
 END $$;
 
@@ -416,7 +422,7 @@ DO $$ BEGIN
     CREATE POLICY "Admins have full management on reports"
   ON public.reports FOR ALL
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
@@ -426,7 +432,7 @@ DO $$ BEGIN
     CREATE POLICY "Donors can view their own donations"
   ON public.donations FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
   END IF;
 END $$;
 
@@ -435,16 +441,17 @@ DO $$ BEGIN
     CREATE POLICY "Admins can view all donations"
   ON public.donations FOR SELECT
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
+-- 9.4 Donations Policies (cont.)
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'donations' AND policyname = 'Anyone can record a donation') THEN
     CREATE POLICY "Anyone can record a donation"
   ON public.donations FOR INSERT
   TO anon, authenticated
-  WITH CHECK ((auth.uid() = user_id OR user_id IS NULL) AND status = 'PENDING');
+  WITH CHECK (((select auth.uid()) = user_id OR user_id IS NULL) AND status = 'PENDING');
   END IF;
 END $$;
 
@@ -453,7 +460,7 @@ DO $$ BEGIN
     CREATE POLICY "Admins can update donation records"
   ON public.donations FOR UPDATE
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
@@ -472,7 +479,7 @@ DO $$ BEGIN
     CREATE POLICY "Volunteers can view their own hours"
   ON public.volunteer_hours FOR SELECT
   TO authenticated
-  USING (auth.uid() = volunteer_id);
+  USING ((select auth.uid()) = volunteer_id);
   END IF;
 END $$;
 
@@ -481,7 +488,7 @@ DO $$ BEGIN
     CREATE POLICY "Admins can view all volunteer hours"
   ON public.volunteer_hours FOR SELECT
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
@@ -490,7 +497,7 @@ DO $$ BEGIN
     CREATE POLICY "Volunteers can log hours"
   ON public.volunteer_hours FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = volunteer_id AND status = 'PENDING');
+  WITH CHECK ((select auth.uid()) = volunteer_id AND status = 'PENDING');
   END IF;
 END $$;
 
@@ -499,8 +506,8 @@ DO $$ BEGIN
     CREATE POLICY "Volunteers can modify or void their pending hours"
   ON public.volunteer_hours FOR UPDATE
   TO authenticated
-  USING (auth.uid() = volunteer_id AND status = 'PENDING')
-  WITH CHECK (auth.uid() = volunteer_id AND status IN ('PENDING', 'VOIDED'));
+  USING ((select auth.uid()) = volunteer_id AND status = 'PENDING')
+  WITH CHECK ((select auth.uid()) = volunteer_id AND status IN ('PENDING', 'VOIDED'));
   END IF;
 END $$;
 
@@ -509,7 +516,7 @@ DO $$ BEGIN
     CREATE POLICY "Volunteers can delete pending hours"
   ON public.volunteer_hours FOR DELETE
   TO authenticated
-  USING (auth.uid() = volunteer_id AND status = 'PENDING');
+  USING ((select auth.uid()) = volunteer_id AND status = 'PENDING');
   END IF;
 END $$;
 
@@ -518,7 +525,7 @@ DO $$ BEGIN
     CREATE POLICY "Admins can verify, reject or modify all volunteer hours"
   ON public.volunteer_hours FOR ALL
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
@@ -537,7 +544,7 @@ DO $$ BEGIN
     CREATE POLICY "Users can view their own votes"
   ON public.priority_votes FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
   END IF;
 END $$;
 
@@ -546,7 +553,7 @@ DO $$ BEGIN
     CREATE POLICY "Admins can view all votes"
   ON public.priority_votes FOR SELECT
   TO authenticated
-  USING (public.is_admin());
+  USING (internal.is_admin());
   END IF;
 END $$;
 
@@ -555,7 +562,7 @@ DO $$ BEGIN
     CREATE POLICY "Users can cast votes"
   ON public.priority_votes FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((select auth.uid()) = user_id);
   END IF;
 END $$;
 
@@ -564,6 +571,114 @@ DO $$ BEGIN
     CREATE POLICY "Users can remove their vote"
   ON public.priority_votes FOR DELETE
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
+  END IF;
+END $$;
+
+-- 9.7 Test Table Policies (RLS hardening)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'test_table' AND policyname = 'test_table_admin_only') THEN
+    CREATE POLICY "test_table_admin_only"
+  ON public.test_table FOR ALL
+  TO authenticated
+  USING (internal.is_admin());
+  END IF;
+END $$;
+
+-- 9.8 Contact Inquiries Table & Policies
+CREATE TABLE IF NOT EXISTS public.contact_inquiries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'NEW',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.contact_inquiries ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'contact_inquiries' AND policyname = 'Anyone can submit contact inquiry') THEN
+    CREATE POLICY "Anyone can submit contact inquiry"
+    ON public.contact_inquiries FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'contact_inquiries' AND policyname = 'Admins can manage contact inquiries') THEN
+    CREATE POLICY "Admins can manage contact inquiries"
+    ON public.contact_inquiries FOR ALL
+    TO authenticated
+    USING (internal.is_admin());
+  END IF;
+END $$;
+
+-- 9.9 Partner Applications Table & Policies
+CREATE TABLE IF NOT EXISTS public.partner_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  position TEXT,
+  organisation TEXT,
+  email TEXT NOT NULL,
+  phone TEXT,
+  website TEXT,
+  category TEXT NOT NULL,
+  purpose TEXT NOT NULL,
+  areas_of_collaboration TEXT,
+  referral_source TEXT,
+  consent BOOLEAN NOT NULL DEFAULT true,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.partner_applications ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'partner_applications' AND policyname = 'Anyone can submit partner application') THEN
+    CREATE POLICY "Anyone can submit partner application"
+    ON public.partner_applications FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'partner_applications' AND policyname = 'Admins can manage partner applications') THEN
+    CREATE POLICY "Admins can manage partner applications"
+    ON public.partner_applications FOR ALL
+    TO authenticated
+    USING (internal.is_admin());
+  END IF;
+END $$;
+
+-- 9.10 Newsletter Subscribers Table & Policies
+CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'newsletter_subscribers' AND policyname = 'Anyone can subscribe to newsletter') THEN
+    CREATE POLICY "Anyone can subscribe to newsletter"
+    ON public.newsletter_subscribers FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'newsletter_subscribers' AND policyname = 'Admins can manage newsletter subscribers') THEN
+    CREATE POLICY "Admins can manage newsletter subscribers"
+    ON public.newsletter_subscribers FOR ALL
+    TO authenticated
+    USING (internal.is_admin());
   END IF;
 END $$;

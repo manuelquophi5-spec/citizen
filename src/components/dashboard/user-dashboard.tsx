@@ -60,7 +60,9 @@ import {
   createReportAction,
   deleteReportAction,
   updateReportStatusAction,
+  updateReportAction,
 } from "@/app/actions/reports";
+import { updateProfileAction } from "@/app/actions/profile";
 import { getDonationHistoryAction, getInitiativesAction } from "@/app/actions/donations";
 import {
   getPriorityVotesAction,
@@ -169,10 +171,10 @@ const DEFAULT_PLEDGE: RecurringPledge = {
 };
 
 const POLL_OPTIONS = [
-  { id: "opt-1", title: "Agorkpo CHPS Compound Maternity Wing Expansion", votes: 412, category: "Healthcare" },
-  { id: "opt-2", title: "Sogakope Waterfront Storm Drain Desilting & Culvert Upgrade", votes: 356, category: "Sanitation" },
-  { id: "opt-3", title: "Dabala Market Pavement & Solar High-Mast Lighting", votes: 289, category: "Commerce" },
-  { id: "opt-4", title: "South Tongu Youth Innovation & Basic Coding Hub", votes: 245, category: "Youth & ICT" },
+  { id: "opt-1", title: "Agorkpo CHPS Compound Maternity Wing Expansion", votes: 0, category: "Healthcare" },
+  { id: "opt-2", title: "Sogakope Waterfront Storm Drain Desilting & Culvert Upgrade", votes: 0, category: "Sanitation" },
+  { id: "opt-3", title: "Dabala Market Pavement & Solar High-Mast Lighting", votes: 0, category: "Commerce" },
+  { id: "opt-4", title: "South Tongu Youth Innovation & Basic Coding Hub", votes: 0, category: "Youth & ICT" },
 ];
 
 export function UserDashboard({
@@ -268,10 +270,10 @@ export function UserDashboard({
 
   // Polls state
   const [pollVotes, setPollVotes] = useState<Record<string, number>>({
-    "opt-1": 412,
-    "opt-2": 356,
-    "opt-3": 289,
-    "opt-4": 245,
+    "opt-1": 0,
+    "opt-2": 0,
+    "opt-3": 0,
+    "opt-4": 0,
   });
   const [userVotedOption, setUserVotedOption] = useState<string | null>(null);
 
@@ -312,7 +314,7 @@ export function UserDashboard({
       if (countsRes.success && countsRes.data) {
         const tallies: Record<string, number> = {};
         POLL_OPTIONS.forEach((opt) => {
-          tallies[opt.id] = countsRes.data?.[opt.title] ?? opt.votes;
+          tallies[opt.id] = countsRes.data?.[opt.title] ?? 0;
         });
         setPollVotes(tallies);
       }
@@ -504,7 +506,7 @@ export function UserDashboard({
     setEditRepPhone(rep.phone || residentPhone);
   };
 
-  const handleSaveEditReport = (e: React.FormEvent) => {
+  const handleSaveEditReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingReport) return;
 
@@ -517,8 +519,24 @@ export function UserDashboard({
       phone: editRepPhone,
     };
 
-    updateLocalReport(editingReport.id, updates);
-    setReports(getLocalReports());
+    if (isLive) {
+      try {
+        await updateReportAction(editingReport.id, {
+          title: editRepTitle,
+          category: editRepCategory,
+          description: editRepDesc,
+          priority: editRepUrgency === "CRITICAL" ? "HIGH" : editRepUrgency === "HIGH" ? "HIGH" : "MEDIUM",
+          location: { town: editRepTown, community: editingReport.community || "Sogakope" },
+        });
+        await fetchLiveUserData();
+      } catch (err) {
+        console.warn("Failed to update report live:", err);
+      }
+    } else {
+      updateLocalReport(editingReport.id, updates);
+      setReports(getLocalReports());
+    }
+
     if (selectedReport && selectedReport.id === editingReport.id) {
       setSelectedReport({ ...selectedReport, ...updates });
     }
@@ -638,7 +656,7 @@ export function UserDashboard({
   };
 
   // Profile Save Handler
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const updatedProfile = {
       name: residentName,
@@ -663,6 +681,19 @@ export function UserDashboard({
         }
       );
     } catch {}
+
+    if (isLive && session.userId) {
+      try {
+        await updateProfileAction(session.userId, {
+          full_name: residentName,
+          electoral_area: residentArea,
+          phone: residentPhone,
+        });
+      } catch (err) {
+        console.warn("Failed to persist profile updates live:", err);
+      }
+    }
+
     showToast("Resident profile preferences saved!");
   };
 

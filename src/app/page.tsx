@@ -54,10 +54,10 @@ async function getHomeData() {
   const approvedPartners = partners.filter((p) => p.status === "APPROVED").slice(0, 8);
 
   const uniqueVolunteersCount = new Set(liveVolunteerHours.map((h) => h.volunteer_id).filter(Boolean)).size;
-  const volunteers = uniqueVolunteersCount > 0 ? uniqueVolunteersCount : 24;
+  const volunteers = uniqueVolunteersCount;
 
   const liveSum = liveDonations.reduce((sum, d) => sum + Number(d.amount), 0);
-  const raised = Math.max(2000, liveSum);
+  const raised = liveSum;
   const communities = new Set(activeInitiatives.map((i: any) => i.location).filter(Boolean));
 
   return {
@@ -68,7 +68,7 @@ async function getHomeData() {
     initiativeCount: activeInitiatives.length,
     volunteers,
     raised,
-    communities: Math.max(communities.size, 1),
+    communities: communities.size,
   };
 }
 

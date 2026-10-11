@@ -61,18 +61,47 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
 };
 
 /**
+ * Validates if a Clerk publishable key contains a real, well-formed frontend API domain.
+ */
+export function isClerkPublishableKeyValid(key?: string | null): boolean {
+  if (!key || typeof key !== "string") return false;
+  if (!key.startsWith("pk_test_") && !key.startsWith("pk_live_")) return false;
+  if (key.includes("dummy") || key.includes("placeholder")) return false;
+
+  try {
+    const raw = key.replace(/^pk_(test_|live_)/, "");
+    if (!raw) return false;
+    const decoded =
+      typeof atob === "function"
+        ? atob(raw)
+        : Buffer.from(raw, "base64").toString("utf-8");
+    const domain = decoded.replace(/\$$/, "").trim();
+    if (domain.startsWith(".") || domain.startsWith("-") || !domain.includes(".")) {
+      return false;
+    }
+    const parts = domain.split(".");
+    if (parts.some((p) => p.length === 0)) {
+      return false;
+    }
+    if (domain.endsWith("clerk.accounts.dev") && parts.length < 4) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validates if Clerk authentication is configured with valid environment variables.
  */
 export function isClerkConfigured(): boolean {
   const pubKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const secKey = process.env.CLERK_SECRET_KEY;
-  return Boolean(
-    pubKey &&
-      secKey &&
-      pubKey.startsWith("pk_") &&
-      !pubKey.includes("dummy") &&
-      !pubKey.includes("placeholder")
-  );
+  if (!pubKey || !secKey) return false;
+  if (!secKey.startsWith("sk_test_") && !secKey.startsWith("sk_live_")) return false;
+  if (secKey.includes("dummy") || secKey.includes("placeholder")) return false;
+  return isClerkPublishableKeyValid(pubKey);
 }
 
 /**

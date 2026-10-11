@@ -17,7 +17,10 @@ export async function castPriorityVoteAction(
     }
 
     const user = await getCurrentUserWithRole();
-    if (user && user.userId !== input.user_id && user.role !== "admin") {
+    if (!user) {
+      return { success: false, error: "Unauthorized: Authentication required to cast priority votes." };
+    }
+    if (user.userId !== input.user_id && user.role !== "admin") {
       return { success: false, error: "Forbidden: Cannot cast vote on behalf of another user." };
     }
 
@@ -67,6 +70,14 @@ export async function deletePriorityVoteAction(id: string): Promise<ActionResult
     const user = await getCurrentUserWithRole();
     if (!user) {
       return { success: false, error: "Unauthorized: Authentication required." };
+    }
+
+    if (user.role !== "admin") {
+      const votes = await DataProvider.getPriorityVotes(user.userId);
+      const ownVote = votes.find((v) => v.id === id);
+      if (!ownVote) {
+        return { success: false, error: "Forbidden: You cannot delete another citizen's vote." };
+      }
     }
 
     const success = await DataProvider.deletePriorityVote(id);

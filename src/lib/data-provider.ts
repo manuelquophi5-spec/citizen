@@ -25,6 +25,12 @@ import type {
   PriorityVoteRow,
   PriorityVoteInsert,
   PriorityVoteUpdate,
+  ContactInquiryRow,
+  ContactInquiryInsert,
+  PartnerApplicationRow,
+  PartnerApplicationInsert,
+  NewsletterSubscriberRow,
+  NewsletterSubscriberInsert,
   ReportStatus,
   VolunteerHourStatus,
   InitiativeStatus,
@@ -367,6 +373,9 @@ class InMemoryDatabase {
   private volunteerHours: VolunteerHourRow[] = [...INITIAL_VOLUNTEER_HOURS];
   private donations: DonationRow[] = [...INITIAL_DONATIONS];
   private priorityVotes: PriorityVoteRow[] = [...INITIAL_VOTES];
+  private contactInquiries: ContactInquiryRow[] = [];
+  private partnerApplications: PartnerApplicationRow[] = [];
+  private newsletterSubscribers: NewsletterSubscriberRow[] = [];
 
   // Helper ID generator
   private nextId(prefix: string): string {
@@ -714,6 +723,57 @@ class InMemoryDatabase {
     const initialLen = this.priorityVotes.length;
     this.priorityVotes = this.priorityVotes.filter((pv) => pv.id !== id);
     return this.priorityVotes.length < initialLen;
+  }
+
+  createContactInquiry(input: ContactInquiryInsert): ContactInquiryRow {
+    const row: ContactInquiryRow = {
+      id: input.id || this.nextId("inq"),
+      name: input.name,
+      email: input.email,
+      phone: input.phone || null,
+      subject: input.subject,
+      message: input.message,
+      status: input.status || "NEW",
+      created_at: input.created_at || new Date().toISOString(),
+    };
+    this.contactInquiries.push(row);
+    return row;
+  }
+
+  createPartnerApplication(input: PartnerApplicationInsert): PartnerApplicationRow {
+    const row: PartnerApplicationRow = {
+      id: input.id || this.nextId("part"),
+      name: input.name,
+      position: input.position || null,
+      organisation: input.organisation || null,
+      email: input.email,
+      phone: input.phone || null,
+      website: input.website || null,
+      category: input.category,
+      purpose: input.purpose,
+      areas_of_collaboration: input.areas_of_collaboration || null,
+      referral_source: input.referral_source || null,
+      consent: input.consent ?? true,
+      status: input.status || "PENDING",
+      created_at: input.created_at || new Date().toISOString(),
+    };
+    this.partnerApplications.push(row);
+    return row;
+  }
+
+  createNewsletterSubscription(input: NewsletterSubscriberInsert): NewsletterSubscriberRow {
+    const existing = this.newsletterSubscribers.find(
+      (s) => s.email.toLowerCase() === input.email.toLowerCase()
+    );
+    if (existing) return existing;
+    const row: NewsletterSubscriberRow = {
+      id: input.id || this.nextId("sub"),
+      email: input.email.toLowerCase(),
+      status: input.status || "ACTIVE",
+      created_at: input.created_at || new Date().toISOString(),
+    };
+    this.newsletterSubscribers.push(row);
+    return row;
   }
 }
 
@@ -1158,5 +1218,59 @@ export const DataProvider = {
       }
     }
     return getMemoryDb().deletePriorityVote(id);
+  },
+
+  // Contact Inquiries
+  async createContactInquiry(input: ContactInquiryInsert): Promise<ContactInquiryRow> {
+    if (isLiveSupabaseAvailable()) {
+      try {
+        const supabase = createAdminClient();
+        const { data, error } = await supabase
+          .from("contact_inquiries")
+          .insert(input)
+          .select()
+          .single();
+        if (!error && data) return data as ContactInquiryRow;
+      } catch {
+        // Fall back to memory DB
+      }
+    }
+    return getMemoryDb().createContactInquiry(input);
+  },
+
+  // Partner Applications
+  async createPartnerApplication(input: PartnerApplicationInsert): Promise<PartnerApplicationRow> {
+    if (isLiveSupabaseAvailable()) {
+      try {
+        const supabase = createAdminClient();
+        const { data, error } = await supabase
+          .from("partner_applications")
+          .insert(input)
+          .select()
+          .single();
+        if (!error && data) return data as PartnerApplicationRow;
+      } catch {
+        // Fall back to memory DB
+      }
+    }
+    return getMemoryDb().createPartnerApplication(input);
+  },
+
+  // Newsletter Subscriptions
+  async createNewsletterSubscription(input: NewsletterSubscriberInsert): Promise<NewsletterSubscriberRow> {
+    if (isLiveSupabaseAvailable()) {
+      try {
+        const supabase = createAdminClient();
+        const { data, error } = await supabase
+          .from("newsletter_subscribers")
+          .upsert(input, { onConflict: "email" })
+          .select()
+          .single();
+        if (!error && data) return data as NewsletterSubscriberRow;
+      } catch {
+        // Fall back to memory DB
+      }
+    }
+    return getMemoryDb().createNewsletterSubscription(input);
   },
 };

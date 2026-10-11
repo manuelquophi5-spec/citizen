@@ -86,7 +86,7 @@ export async function signInAction(payload: {
         return {
           success: false,
           error:
-            "Invalid Security Authorization PIN / password. Please enter the official District Administrator PIN (e.g. STDA-2026).",
+            "Invalid Security Authorization PIN or password. Access is restricted to authorized Assembly personnel.",
         };
       }
     }

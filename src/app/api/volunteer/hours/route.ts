@@ -28,7 +28,13 @@ export async function POST(request: Request) {
     }
 
     const session = await getServerSession();
-    if (session && session.role === "volunteer" && session.userId !== body.volunteer_id) {
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Authentication required to log volunteer hours." },
+        { status: 401 }
+      );
+    }
+    if (session.userId !== body.volunteer_id && session.role !== "admin") {
       return NextResponse.json(
         { success: false, error: "Forbidden: Cannot log volunteer hours for another account." },
         { status: 403 }

@@ -363,7 +363,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
             longitude: 0.589,
             suggestedSolution: r.admin_notes || r.official_feedback || null,
             anonymous: !r.reporter_name,
-            status: (r.status === "DISPATCHED" ? "IN_PROGRESS" : r.status) as any,
+            status: r.status as SurveyStatus,
             createdAt: new Date(r.created_at),
           };
         });
@@ -1037,6 +1037,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
     { id: "CRITICAL", label: "Critical Priority", badge: criticalIssuesCount, badgeTone: "danger" },
     { id: "SUBMITTED", label: "Submitted", badge: allReports.filter((r) => r.status === "SUBMITTED").length },
     { id: "IN_REVIEW", label: "In Review", badge: allReports.filter((r) => r.status === "IN_REVIEW").length },
+    { id: "DISPATCHED", label: "Dispatched", badge: allReports.filter((r) => r.status === "DISPATCHED").length },
     { id: "IN_PROGRESS", label: "In Progress", badge: allReports.filter((r) => r.status === "IN_PROGRESS").length },
     { id: "RESOLVED", label: "Resolved", badge: resolvedIssues, badgeTone: "success" },
   ];
@@ -1079,7 +1080,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
       header: "Status",
       sortable: true,
       render: (row) => {
-        const color = row.status === "RESOLVED" ? "success" : row.status === "IN_PROGRESS" ? "info" : row.status === "IN_REVIEW" ? "warning" : "gray";
+        const color = row.status === "RESOLVED" ? "success" : row.status === "IN_PROGRESS" ? "info" : row.status === "DISPATCHED" ? "info" : row.status === "IN_REVIEW" ? "warning" : "gray";
         return <FilamentBadge color={color}>{row.status.replace("_", " ")}</FilamentBadge>;
       },
     },
@@ -2082,8 +2083,8 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-ocean-500">
                   Dispatch Operational Status
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(["SUBMITTED", "IN_REVIEW", "IN_PROGRESS", "RESOLVED"] as SurveyStatus[]).map((st) => (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {(["SUBMITTED", "IN_REVIEW", "DISPATCHED", "IN_PROGRESS", "RESOLVED"] as SurveyStatus[]).map((st) => (
                     <button
                       key={st}
                       type="button"
@@ -2830,6 +2831,7 @@ export function AdminDashboard({ session }: { session: LocalSession }) {
                   >
                     <option value="SUBMITTED">SUBMITTED</option>
                     <option value="IN_REVIEW">IN REVIEW</option>
+                    <option value="DISPATCHED">DISPATCHED</option>
                     <option value="IN_PROGRESS">IN PROGRESS</option>
                     <option value="RESOLVED">RESOLVED</option>
                   </select>

@@ -32,7 +32,13 @@ export async function POST(request: Request) {
     }
 
     const session = await getServerSession();
-    if (session && session.userId !== body.user_id && session.role !== "admin") {
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Authentication required to cast priority votes." },
+        { status: 401 }
+      );
+    }
+    if (session.userId !== body.user_id && session.role !== "admin") {
       return NextResponse.json(
         { success: false, error: "Forbidden: Cannot cast vote on behalf of another user." },
         { status: 403 }

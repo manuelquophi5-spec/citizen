@@ -2,12 +2,9 @@ import { NextResponse, type NextRequest, type NextFetchEvent } from "next/server
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { isClerkConfigured } from "@/lib/rbac";
 
-const hasClerkKeys = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  process.env.CLERK_SECRET_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
-);
+const hasClerkKeys = isClerkConfigured();
 
 const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",

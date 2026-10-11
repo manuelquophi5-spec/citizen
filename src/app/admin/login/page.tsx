@@ -178,9 +178,6 @@ function AdminLoginForm() {
               <label className="text-xs font-semibold text-ocean-200">
                 Security Authorization PIN / Password
               </label>
-              <span className="text-[10px] font-mono text-gold-400/80 bg-gold-400/10 px-2 py-0.5 rounded border border-gold-400/20">
-                Default PIN: STDA-2026
-              </span>
             </div>
             <div className="relative">
               <input
@@ -188,7 +185,7 @@ function AdminLoginForm() {
                 required
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="e.g. STDA-2026"
+                placeholder="Enter authorization PIN"
                 className="w-full rounded-xl border border-ocean-700 bg-ocean-950/80 px-3.5 py-2.5 text-xs text-white placeholder:text-ocean-500 focus:border-gold-400 focus:ring-1 focus:ring-gold-400 outline-none transition pr-10"
               />
               <button
@@ -225,14 +222,16 @@ function AdminLoginForm() {
               <span>{pending ? "Verifying Authorization…" : "Unlock District Operations Console"}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={fillDemoCredentials}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-ocean-700/80 bg-ocean-800/40 px-3 py-2 text-xs font-medium text-ocean-300 hover:bg-ocean-800 hover:text-white transition"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-gold-400" />
-              <span>One-Click Fill Demo Coordinator Credentials</span>
-            </button>
+            {process.env.NODE_ENV !== "production" && (
+              <button
+                type="button"
+                onClick={fillDemoCredentials}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-ocean-700/80 bg-ocean-800/40 px-3 py-2 text-xs font-medium text-ocean-300 hover:bg-ocean-800 hover:text-white transition"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-gold-400" />
+                <span>One-Click Fill Dev Credentials</span>
+              </button>
+            )}
           </div>
         </form>
 

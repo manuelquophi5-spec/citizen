@@ -320,6 +320,85 @@ export type PriorityVoteUpdate = {
 };
 
 // ----------------------------------------------------------------------------
+// 7. Contact Inquiries Entity Types
+// ----------------------------------------------------------------------------
+export type ContactInquiryRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+  status: string;
+  created_at: string;
+};
+
+export type ContactInquiryInsert = {
+  id?: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  subject: string;
+  message: string;
+  status?: string;
+  created_at?: string;
+};
+
+// ----------------------------------------------------------------------------
+// 8. Partner Applications Entity Types
+// ----------------------------------------------------------------------------
+export type PartnerApplicationRow = {
+  id: string;
+  name: string;
+  position: string | null;
+  organisation: string | null;
+  email: string;
+  phone: string | null;
+  website: string | null;
+  category: string;
+  purpose: string;
+  areas_of_collaboration: string | null;
+  referral_source: string | null;
+  consent: boolean;
+  status: string;
+  created_at: string;
+};
+
+export type PartnerApplicationInsert = {
+  id?: string;
+  name: string;
+  position?: string | null;
+  organisation?: string | null;
+  email: string;
+  phone?: string | null;
+  website?: string | null;
+  category: string;
+  purpose: string;
+  areas_of_collaboration?: string | null;
+  referral_source?: string | null;
+  consent?: boolean;
+  status?: string;
+  created_at?: string;
+};
+
+// ----------------------------------------------------------------------------
+// 9. Newsletter Subscribers Entity Types
+// ----------------------------------------------------------------------------
+export type NewsletterSubscriberRow = {
+  id: string;
+  email: string;
+  status: string;
+  created_at: string;
+};
+
+export type NewsletterSubscriberInsert = {
+  id?: string;
+  email: string;
+  status?: string;
+  created_at?: string;
+};
+
+// ----------------------------------------------------------------------------
 // Canonical Supabase Database Generic Interface
 // ----------------------------------------------------------------------------
 export type Database = {
@@ -359,6 +438,24 @@ export type Database = {
         Row: PriorityVoteRow;
         Insert: PriorityVoteInsert;
         Update: PriorityVoteUpdate;
+        Relationships: [];
+      };
+      contact_inquiries: {
+        Row: ContactInquiryRow;
+        Insert: ContactInquiryInsert;
+        Update: Partial<ContactInquiryInsert>;
+        Relationships: [];
+      };
+      partner_applications: {
+        Row: PartnerApplicationRow;
+        Insert: PartnerApplicationInsert;
+        Update: Partial<PartnerApplicationInsert>;
+        Relationships: [];
+      };
+      newsletter_subscribers: {
+        Row: NewsletterSubscriberRow;
+        Insert: NewsletterSubscriberInsert;
+        Update: Partial<NewsletterSubscriberInsert>;
         Relationships: [];
       };
     };

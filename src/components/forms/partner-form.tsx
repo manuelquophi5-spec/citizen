@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { PARTNER_CATEGORIES, labelize } from "@/types";
 import { Button } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { submitPartnerAction } from "@/app/actions/partner";
 
 const inputClass =
   "w-full rounded-lg border border-ocean-200 px-3 py-2.5 text-sm focus:border-ocean-500 dark:border-ocean-700 dark:bg-ocean-900";
@@ -11,15 +12,43 @@ const inputClass =
 export function PartnerForm() {
   const [consent, setConsent] = useState(false);
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!consent) return;
+
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const result = await submitPartnerAction({
+      name: String(formData.get("name") || ""),
+      position: String(formData.get("position") || "") || null,
+      organisation: String(formData.get("organisation") || "") || null,
+      email: String(formData.get("email") || ""),
+      phone: String(formData.get("phone") || "") || null,
+      website: String(formData.get("website") || "") || null,
+      category: String(formData.get("category") || ""),
+      purpose: String(formData.get("purpose") || ""),
+      areas_of_collaboration: String(formData.get("areasOfCollaboration") || "") || null,
+      referral_source: String(formData.get("referralSource") || "") || null,
+      consent: true,
+    });
+
+    setLoading(false);
+    if (result.success) {
+      setSent(true);
+      (e.target as HTMLFormElement).reset();
+      setConsent(false);
+    } else {
+      setError(result.error || "Failed to submit partner application. Please try again.");
+    }
+  }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        setSent(true);
-      }}
-      className="space-y-5"
-    >
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <input name="name" required placeholder="Full name" className={inputClass} />
         <input name="position" placeholder="Position / title" className={inputClass} />
@@ -41,17 +70,47 @@ export function PartnerForm() {
       <input name="referralSource" placeholder="How did you hear about us?" className={inputClass} />
 
       <label className="flex items-start gap-2 text-sm text-ocean-700 dark:text-ocean-300">
-        <input type="checkbox" required checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 rounded" />
+        <input
+          type="checkbox"
+          required
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1 rounded"
+        />
         I consent to The Citizen Project reviewing and contacting me about this application.
       </label>
 
-      <Button type="submit" size="lg" className="w-full" disabled={!consent}>
-        Submit application
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-xs text-red-700 dark:text-red-300"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <Button type="submit" size="lg" className="w-full" disabled={!consent || loading}>
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Submitting Application...
+          </>
+        ) : (
+          "Submit application"
+        )}
       </Button>
 
       {sent && (
-        <div className={cn("rounded-lg p-4 text-sm bg-leaf-400/10 text-leaf-600")}>
-          Thanks for your interest! This is a demo site, so applications aren&apos;t actually reviewed or stored anywhere.
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-start gap-3 rounded-xl border border-leaf-400/30 bg-leaf-400/10 p-4 text-xs text-leaf-700 dark:text-leaf-300"
+        >
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-leaf-500" />
+          <span>
+            Thank you for your partnership application. Our South Tongu district team has logged your submission and will review collaboration opportunities with you shortly.
+          </span>
         </div>
       )}
     </form>
