@@ -16,10 +16,10 @@ export default function MissionPage() {
       <div className="container-page max-w-3xl">
         <SectionHeading eyebrow="What we do, every day" title="Our Mission" />
         <p className="mt-6 text-xl font-medium leading-relaxed text-ocean-950 dark:text-white">
-          &ldquo;The Citizen Project unites young people and institutions across South Tongu in building a more responsible, sustainable, and civically engaged Ghana — one community at a time.&rdquo;
+          &ldquo;To foster impactful development through youth-led advocacy and volunteerism for thriving communities.&rdquo;
         </p>
         <p className="mt-4 text-base text-ocean-700 dark:text-ocean-300 leading-relaxed">
-          We equip learners, youth facilitators, and community residents with the knowledge, resources, and transparent public ledger needed to resolve local social challenges, steward our environment, and take active responsibility for South Tongu District.
+          Through our commitment to volunteerism and social responsibility, we equip young leaders, facilitators, and community residents across Dabala and communities within South Tongu with the framework to facilitate sustainable growth and development.
         </p>
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
           {pillars.map((p) => (

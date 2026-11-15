@@ -23,7 +23,7 @@ const values = [
   {
     icon: Scale,
     title: "Constituency Fairness",
-    body: "Programmes are intentionally designed to reach girls and boys across all 7 electoral areas of South Tongu equally.",
+    body: "Programmes are intentionally designed to reach girls and boys across all communities within South Tongu equally.",
   },
   {
     icon: Sprout,
@@ -62,33 +62,54 @@ export default function AboutPage() {
           <div className="space-y-6 text-ocean-700 dark:text-ocean-300 lg:col-span-7">
             <Reveal>
               <div>
-                <span className="text-xs font-semibold text-ocean-600 dark:text-gold-400">Origins &amp; Mandate</span>
+                <span className="text-xs font-semibold text-ocean-600 dark:text-gold-400">Origin and Mandate</span>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-ocean-950 dark:text-white sm:text-3xl">
-                  From classroom civics to constituency-wide action
+                  From casual conversations to action
                 </h2>
                 <p className="mt-4 text-base leading-relaxed">
-                  The Citizen Project began as a civic education programme for basic school learners, designed to
-                  complement the National Commission for Civic Education&apos;s (NCCE) mandate under UN Sustainable
-                  Development Goal 4. What started as a focused learning calendar has rapidly grown into a broader
-                  constituency movement.
+                  The Citizen Project is an initiative committed to fostering social responsibility and promoting
+                  transformative change within our communities through advocacy and volunteerism led by vibrant youths
+                  of respective communities within the South Tongu constituency.
                 </p>
                 <p className="mt-3 text-base leading-relaxed">
-                  Today, our work spans environmental stewardship along the Volta estuary, youth civic leadership,
-                  direct educational support distributions, and community-led reporting of local social challenges.
+                  This initiative stems from the aspirations of young individuals dedicated to effecting positive change
+                  and confronting pressing issues affecting our society. These issues encompass a wide array including
+                  education, industrialization, entrepreneurship and job creation, civic education, healthcare and
+                  politics.
+                </p>
+                <p className="mt-3 text-base leading-relaxed">
+                  Through our commitment to volunteerism and social responsibility we aim to establish a significant
+                  framework that facilitates growth and development in the communities we serve.
                 </p>
               </div>
             </Reveal>
 
-            <Reveal delay={0.1}>
+            <Reveal delay={0.08}>
+              <div className="grid gap-4 sm:grid-cols-2 border-t border-ocean-100 pt-6 dark:border-ocean-800">
+                <div className="rounded-xl border border-ocean-100 bg-ocean-50/60 p-4 dark:border-ocean-800 dark:bg-ocean-900/40">
+                  <span className="text-xs font-bold uppercase tracking-wider text-ocean-600 dark:text-gold-400">Mission</span>
+                  <p className="mt-2 text-sm font-medium leading-relaxed text-ocean-950 dark:text-white">
+                    To foster impactful development through youth-led advocacy and volunteerism for thriving communities.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-ocean-100 bg-ocean-50/60 p-4 dark:border-ocean-800 dark:bg-ocean-900/40">
+                  <span className="text-xs font-bold uppercase tracking-wider text-ocean-600 dark:text-gold-400">Vision</span>
+                  <p className="mt-2 text-sm font-medium leading-relaxed text-ocean-950 dark:text-white">
+                    To evolve into a central catalyst for the promotion of sustainable communities.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.12}>
               <div className="border-t border-ocean-100 pt-6 dark:border-ocean-800">
                 <span className="text-xs font-semibold text-ocean-600 dark:text-gold-400">Governance &amp; Stewardship</span>
                 <h2 className="mt-1 font-display text-xl font-semibold text-ocean-950 dark:text-white">
                   Accountable, lean, and rooted in the District
                 </h2>
                 <p className="mt-3 text-base leading-relaxed">
-                  We operate with a decentralized, volunteer-led structure: local coordination teams in Sogakope and Dabala,
-                  electoral-area volunteer facilitators, and direct advisory relationships with institutional stakeholders
-                  including Ghana Education Service (GES), Ghana Health Service (GHS), and the South Tongu District Assembly.
+                  We operate with a decentralized, volunteer-led structure: local coordination teams in Dabala and other
+                  communities within the South Tongu District and direct advisory relationships with partner stakeholders.
                 </p>
               </div>
             </Reveal>
@@ -105,14 +126,14 @@ export default function AboutPage() {
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-ocean-950/80 via-transparent to-transparent p-5 flex flex-col justify-end text-white">
-                <p className="font-display text-sm font-semibold">Agorkpo Basic School Handover</p>
-                <p className="text-xs text-ocean-300">Classroom learning materials delivered directly to teachers &amp; students</p>
+                <p className="font-display text-sm font-semibold">Educare Initiative &middot; Dabala Handover</p>
+                <p className="text-xs text-ocean-300">School uniforms and learning materials delivered directly to pupils</p>
               </div>
             </div>
 
             <div className="rounded-2xl border border-ocean-100 bg-ocean-50/60 p-5 dark:border-ocean-800 dark:bg-ocean-900/40">
               <p className="text-xs font-semibold uppercase tracking-wider text-ocean-500">
-                Active Electoral Areas
+                Communities within South Tongu
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {electoralAreas.map((area) => (

@@ -174,6 +174,59 @@ export interface LeaderboardEntry {
 
 export const initiatives: Initiative[] = [
   {
+    id: "educare-initiative",
+    slug: "educare-initiative",
+    title: "Educare Initiative",
+    summary:
+      "Inspiring hope and empowering learners through school uniforms, essential teaching materials, and educational dignity across South Tongu.",
+    description:
+      "The Citizen Project, through its Educare Initiative, promotes quality and inclusive education in our communities aligned with UN Sustainable Development Goal 4 (Quality Education). Beginning with our inaugural donation to lower primary pupils of Dabala E.P. Basic School A, Educare restores dignity and confidence among learners, reduces absenteeism, and rallies young citizens to embrace community leadership.",
+    coverImage: "/images/outreach/IMG_9626.jpg",
+    category: "Education & Youth Support",
+    objectives: [
+      "Promote quality and inclusive education contributing to UN SDG 4",
+      "Restore dignity and confidence among learners and reduce absenteeism",
+      "Provide school uniforms and essential teaching and learning materials to underserved schools",
+      "Inspire youth across South Tongu to embrace volunteerism and civic leadership",
+    ],
+    sdgTags: ["SDG 4"],
+    status: "ACTIVE",
+    budget: 30000,
+    amountRaised: 14500,
+    location: "Dabala E.P. Basic School A & communities within South Tongu",
+    beneficiaries: "Basic school pupils and underserved schools",
+    volunteersInvolved: 22,
+    startDate: new Date("2026-09-23"),
+    endDate: null,
+    createdAt: new Date("2026-09-23T08:00:00Z"),
+    milestones: [
+      {
+        label: "Dabala E.P. Basic School A Handover",
+        description: "School uniforms donated to selected lower primary pupils, marking the launch of Educare.",
+        date: new Date("2026-09-23"),
+        status: "complete",
+      },
+      {
+        label: "Attendance & Learner Impact Review",
+        description: "Monitoring confidence and reduction in absenteeism with teachers and parents in Dabala.",
+        date: new Date("2026-10-25"),
+        status: "current",
+      },
+      {
+        label: "District-wide Uniforms & Supplies Drive",
+        description: "Mobilizing resources for essential learning materials and uniforms for additional learners.",
+        date: new Date("2026-11-30"),
+        status: "upcoming",
+      },
+      {
+        label: "Expansion to Underserved Schools",
+        description: "Reaching more basic schools across communities within South Tongu.",
+        date: new Date("2027-01-20"),
+        status: "upcoming",
+      },
+    ],
+  },
+  {
     id: "global-citizenship-civic-education-programme",
     slug: "global-citizenship-civic-education-programme",
     title: "Global Citizenship & Civic Education Programme",
@@ -363,6 +416,35 @@ export const testimonials: Testimonial[] = [
 
 export const blogPosts: BlogPost[] = [
   {
+    id: "educare-commits-to-quality-education-in-dabala",
+    slug: "educare-commits-to-quality-education-in-dabala",
+    title: "Educare Commits to Quality Education in Dabala",
+    excerpt:
+      "On 23 September 2026, The Citizen Project, through its Educare Initiative, undertook its first social responsibility project in Dabala, donating school uniforms to selected lower primary pupils of Dabala E.P. Basic School A.",
+    content: `On 23 September 2026, The Citizen Project, through its Educare Initiative, undertook its first social responsibility project in Dabala, marking the beginning of a commitment to promoting quality and inclusive education in our communities.
+
+As part of the initiative, school uniforms were donated to selected lower primary pupils of Dabala E.P. Basic School A. The gesture forms part of Educare’s broader vision of supporting learners and schools while contributing to United Nations Sustainable Development Goal 4 (Quality Education).
+
+Beyond providing uniforms, we hope this initiative will help restore dignity and confidence among learners, reduce associated absenteeism, and create a more conducive environment for children to participate fully in their education.
+
+More importantly, The Citizen Project hopes this first step will inspire other young people across the South Tongu district to embrace volunteerism, social responsibility, and community leadership. We believe that meaningful change begins when citizens recognize that the development of our communities is not solely someone else’s responsibility—it is a responsibility we all share.
+
+We extend our sincere gratitude to all our donors, volunteers, and supporters whose generosity and commitment made this initiative possible.
+
+This is only the beginning. As we continue our mobilization efforts, we look forward to reaching more learners and underserved schools with school uniforms and essential teaching and learning materials.
+
+Together, let us restore hope, uphold dignity, and invest in the future of our children.
+
+Educare — Inspiring Hope, Empowering Learners.
+
+The Citizen Project`,
+    category: "Educare Initiative",
+    tags: ["Educare", "Dabala", "SDG4", "Quality Education", "Donation", "Youth Leadership"],
+    published: true,
+    publishedAt: new Date("2026-09-23"),
+    coverImage: "/images/outreach/IMG_9626.jpg",
+  },
+  {
     id: "why-civic-education-matters-for-ghanas-youth",
     slug: "why-civic-education-matters-for-ghanas-youth",
     title: "Why Civic Education Matters for Ghana's Youth",
@@ -520,6 +602,17 @@ export const surveyReports: SurveyReport[] = [
 export const galleryImages: GalleryImage[] = [];
 
 export const successStories: SuccessStory[] = [
+  {
+    id: "educare-quality-education-dabala",
+    slug: "educare-quality-education-dabala",
+    title: "Educare Commits to Quality Education in Dabala",
+    beneficiaryName: "Selected lower primary pupils, Dabala E.P. Basic School A",
+    story:
+      "School uniforms were donated to selected lower primary pupils of Dabala E.P. Basic School A, marking Educare's first social responsibility project and taking concrete action toward UN SDG 4 while restoring dignity and reducing absenteeism.",
+    impactMetric: "Dabala E.P. Basic School A Uniforms Donated",
+    initiativeId: "educare-initiative",
+    interview: null,
+  },
   {
     id: "from-classroom-to-community-action",
     slug: "from-classroom-to-community-action",

@@ -22,7 +22,7 @@ const getInvolved = [
 ];
 
 const social = [
-  { icon: Facebook, href: "#", label: "Facebook" },
+  { icon: Facebook, href: "https://www.facebook.com/share/1Ezo6LBh7W/?mibextid=wwXIfr", label: "Facebook" },
   { icon: Instagram, href: "#", label: "Instagram" },
   { icon: Twitter, href: "#", label: "X" },
   { icon: Linkedin, href: "#", label: "LinkedIn" },
@@ -65,6 +65,8 @@ export function Footer() {
                 key={s.label}
                 href={s.href}
                 aria-label={s.label}
+                target={s.href.startsWith("http") ? "_blank" : undefined}
+                rel={s.href.startsWith("http") ? "noopener noreferrer" : undefined}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-ocean-900 text-ocean-200 transition hover:bg-ocean-800 hover:text-white"
               >
                 <s.icon className="h-4 w-4" />

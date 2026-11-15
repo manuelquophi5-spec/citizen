@@ -16,7 +16,7 @@ const visionPillars = [
   {
     icon: Sparkles,
     title: "Youth-Driven Civic Leadership",
-    desc: "Young people across Sogakope, Dabala, and all 7 electoral areas actively initiating solutions and participating in local governance.",
+    desc: "Young people across Sogakope, Dabala, and communities within South Tongu actively initiating solutions and participating in local governance.",
   },
   {
     icon: Sprout,
@@ -37,7 +37,7 @@ export default function VisionPage() {
 
         <div className="mt-8 rounded-2xl border border-ocean-100 bg-ocean-50/70 p-6 dark:border-ocean-800 dark:bg-ocean-900/40 sm:p-8">
           <p className="font-display text-xl sm:text-2xl font-semibold text-ocean-950 dark:text-white leading-relaxed">
-            &ldquo;We envision a South Tongu where every young person understands their innate power as a citizen — where the gains of one generation&apos;s civic education are permanently visible in the next generation&apos;s communities.&rdquo;
+            &ldquo;To evolve into a central catalyst for the promotion of sustainable communities.&rdquo;
           </p>
         </div>
 

@@ -155,7 +155,7 @@ export default function DedicatedVolunteerPage() {
 
             <div className="mt-8 flex flex-wrap items-center gap-6 text-xs text-ocean-600 dark:text-ocean-400">
               <span className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="h-4 w-4 text-leaf-500" /> All 7 Electoral Areas
+                <CheckCircle2 className="h-4 w-4 text-leaf-500" /> Communities within South Tongu
               </span>
               <span className="flex items-center gap-1.5 font-medium">
                 <Clock className="h-4 w-4 text-gold-500" /> Flexible Service Hours

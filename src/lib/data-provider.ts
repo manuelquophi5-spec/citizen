@@ -95,6 +95,21 @@ const INITIAL_PROFILES: ProfileRow[] = [
 
 const INITIAL_INITIATIVES: InitiativeRow[] = [
   {
+    id: "a0000000-0000-0000-0000-000000000000",
+    slug: "educare-initiative",
+    title: "Educare Initiative",
+    summary: "Inspiring hope and empowering learners through school uniforms and education support.",
+    description: "The Citizen Project, through its Educare Initiative, undertook its first social responsibility project in Dabala, donating school uniforms to selected lower primary pupils of Dabala E.P. Basic School A. Educare restores dignity, reduces absenteeism, and rallies young citizens across South Tongu.",
+    category: "EDUCATION",
+    target_amount: 30000.0,
+    raised_amount: 14500.0,
+    status: "ACTIVE",
+    cover_image: "/images/outreach/IMG_9626.jpg",
+    location: "Dabala & South Tongu District",
+    created_at: new Date(Date.now() - 20 * 86400000).toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
     id: "a0000000-0000-0000-0000-000000000001",
     slug: "clean-communities-initiative",
     title: "Clean Communities Initiative",
